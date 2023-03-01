@@ -1,0 +1,56 @@
+
+* BingAI Chat in Emacs
+
+* Setup
+
+** Requirements
+
+emacs packages: 
+
+- [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]]
+- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
+
+python packages:
+
+- [[https://github.com/borisbabic/browser_cookie3][browser_cookies3]]  for get cookies
+
+A Microsoft Account with early access to http://bing.com/chat
+
+*** Check access (Required)
+
+- Install the latest version of Microsoft Edge
+- Open http://bing.com/chat
+- If you see a chat feature, you are good to go
+
+*** Getting authentication (Required)
+Open terminal and run the following code:
+
+#+begin_src shell
+  python -c "import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires,c.domain, c.secure, c.path)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))"
+#+end_src
+
+If you can get the output and the output includes =_U= field, you can auth successful.
+
+** Installation
+
+Put bingai.el to your load-path, The load-path is usually ~/elisp/
+
+It's set in your ~/.emacs like this:
+
+#+begin_src elisp
+(add-to-list 'load-path (expand-file-name "~/elisp"))
+#+end_src
+
+And the following to your ~/.emacs startup file.
+
+#+begin_src elisp
+(require 'bingai)
+#+end_src
+
+
+* Usage
+
+=M-x =bingai-chat=  start a conversation
+
+=C-u M-x bingai-chat= restart a new conversation.
+
