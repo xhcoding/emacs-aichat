@@ -149,6 +149,8 @@ All these parameters are defined as in `websocket-open'."
       (goto-char (point-max))
       (insert (apply #'format str args) "\n"))))
 
+(defconst bingai--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57")
+
 (defconst bingai--url-unreserved-chars
   '(?a ?b ?c ?d ?e ?f ?g ?h ?i ?j ?k ?l ?m ?n ?o ?p ?q ?r ?s ?t ?u ?v ?w ?x ?y ?z
        ?A ?B ?C ?D ?E ?F ?G ?H ?I ?J ?K ?L ?M ?N ?O ?P ?Q ?R ?S ?T ?U ?V ?W ?X ?Y ?Z
@@ -183,7 +185,8 @@ for older Emacs versions.")
     (setq type "GET"))
   (promise-new (lambda (resolve reject)
                  (condition-case error
-                     (let ((url-request-extra-headers headers)
+                     (let ((url-user-agent bingai--user-agent)
+                           (url-request-extra-headers headers)
                            (url-request-method type)
                            (url-request-data data)
                            buf)
