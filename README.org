@@ -23,6 +23,8 @@ A Microsoft Account with early access to http://bing.com/chat
 - If you see a chat feature, you are good to go
 
 *** Getting authentication (Required)
+
+**** Option one
 Open terminal and run the following code:
 
 #+begin_src shell
@@ -30,6 +32,14 @@ Open terminal and run the following code:
 #+end_src
 
 If you can get the output and the output includes =_U= field, you can auth successful.
+
+**** Option two
+- Install the cookie editor extension for [[https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi][Edge]]
+- Go to bing.com
+- Open the extension
+- Click "Export" on the bottom right (This saves your cookies to clipboard)
+- Paste your cookies into a file cookies.json
+- Set =bingai-cookies-file= to your cookies.json path
 
 ** Installation
 
@@ -50,7 +60,7 @@ And the following to your ~/.emacs startup file.
 
 * Usage
 
-=M-x =bingai-chat=  start a conversation
+=M-x bingai-chat=  start a conversation
 
 =C-u M-x bingai-chat= restart a new conversation.
 

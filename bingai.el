@@ -137,6 +137,8 @@ All these parameters are defined as in `websocket-open'."
 
 (defvar bingai-debug nil)
 
+(defvar bingai-cookies-file nil)
+
 (defun bingai--debug (str &rest args)
   (when bingai-debug
     (with-current-buffer (get-buffer-create "*BINGAI-DEBUG*")
@@ -177,10 +179,11 @@ for older Emacs versions.")
     (setq type "GET"))
   (promise-new (lambda (resolve reject)
                  (condition-case error
-                     (let ((url-request-extra-headers headers)
-                           (url-request-method type)
-                           (url-request-data data)
-                           buf)
+                     (let* ((url-user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57")
+                            (url-request-extra-headers headers)
+                            (url-request-method type)
+                            (url-request-data data)
+                            buf)
                        (url-retrieve url
                                      (lambda (_)
                                        (let (resp-status
@@ -217,28 +220,52 @@ for older Emacs versions.")
   (when-let ((installed (await (bingai--shell-command "python -c \"import browser_cookie3\""))))
     t))
 
-(async-defun bingai--get-cookies ()
-  (if (not (await (bingai--check-deps)))
-      (message "Please install browser_cookie3 by `pip3 install browser_cookie3`")
-    (when-let ((stdout (await
-                        (promise:make-shell-command bingai--get-cookies-script))))
-      (mapcar (lambda (line)
-                (let* ((fields (split-string line " " t))
-                       (name (nth 0 fields))
-                       (value (nth 1 fields))
-                       (expires (if (string= (nth 2 fields) "None")
-                                    nil
-                                  (format-time-string "%FT%T%z" (seconds-to-time (string-to-number (nth 2 fields))))))
-                       (domain (nth 3 fields))
-                       (localpart (nth 4 fields))
-                       (secure (if (string= (nth 5 fields) "1")
-                                   t
-                                 nil)))
+(defun bingai--get-cookies-from-file (filename)
+  (when (file-exists-p filename)
+    (let ((cookies (json-read-file filename)))
+      (mapcar (lambda (cookie)
+                (let ((name (alist-get 'name cookie))
+                      (value (alist-get 'value cookie))
+                      (expires (if (assq 'expirationDate cookie)
+                                   (format-time-string "%FT%T%z"
+                                                       (seconds-to-time
+                                                        (alist-get 'expirationDate cookie)))
+                                 nil))
+                      (domain (alist-get 'domain cookie))
+                      (localpart (alist-get 'path cookie))
+                      (secure (if (eq (alist-get 'secure cookie) :json-false)
+                                  nil
+                                t)))
                   (list name value expires domain localpart secure)))
-              (split-string stdout "\n" t)))))
+              cookies))))
+
+(async-defun bingai--get-cookies ()
+  (await nil)
+  (if bingai-cookies-file
+      (bingai--get-cookies-from-file bingai-cookies-file)
+    (if (not (await (bingai--check-deps)))
+        (message "Please install browser_cookie3 by `pip3 install browser_cookie3`")
+      (when-let ((stdout (await
+                          (promise:make-shell-command bingai--get-cookies-script))))
+        (mapcar (lambda (line)
+                  (let* ((fields (split-string line " " t))
+                         (name (nth 0 fields))
+                         (value (nth 1 fields))
+                         (expires (if (string= (nth 2 fields) "None")
+                                      nil
+                                    (format-time-string "%FT%T%z" (seconds-to-time (string-to-number (nth 2 fields))))))
+                         (domain (nth 3 fields))
+                         (localpart (nth 4 fields))
+                         (secure (if (string= (nth 5 fields) "1")
+                                     t
+                                   nil)))
+                    (list name value expires domain localpart secure)))
+                (split-string stdout "\n" t))))))
+
 
 (async-defun bingai--refresh-cookies ()
   (when-let ((bing-cookies (await (bingai--get-cookies))))
+    (bingai--debug "bing-cookies:\n%s\n" bing-cookies)
     (ignore-errors (url-cookie-delete-cookies bingai--domain))
     (dolist (bing-cookie bing-cookies)
       (apply #'url-cookie-store bing-cookie))))
@@ -499,6 +526,19 @@ for older Emacs versions.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; User API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar bingai-file (expand-file-name "aichat.md" user-emacs-directory))
+
+;;;###autoload
+(defun bingai-toggle-debug ()
+  (interactive)
+  (cond
+   (bingai-debug
+    (setq bingai-debug nil
+          url-debug nil
+          websocket-debug nil))
+   (t
+    (setq bingai-debug t
+          url-debug t
+          websocket-debug t))))
 
 ;;;###autoload
 (defun bingai-chat (say)
