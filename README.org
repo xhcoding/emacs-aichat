@@ -10,7 +10,7 @@ emacs packages:
 - [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]]
 - [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
 
-python packages:
+python packages [optional]:
 
 - [[https://github.com/borisbabic/browser_cookie3][browser_cookies3]]  for get cookies
 
