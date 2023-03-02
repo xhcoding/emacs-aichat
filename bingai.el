@@ -81,7 +81,8 @@
 
 ;;; Require
 
-(require 'cl-lib)
+(eval-when-compile (require 'cl-lib))
+
 (require 'json)
 (require 'seq)
 (require 'url)
@@ -133,6 +134,9 @@ All these parameters are defined as in `websocket-open'."
              (when custom-headers-alist "\r\n"))
      "\r\n")))
 
+;; setup url library, avoid set cookie failed
+(url-do-setup)
+
 ;;; Code:
 
 (defvar bingai-debug nil)
@@ -179,11 +183,10 @@ for older Emacs versions.")
     (setq type "GET"))
   (promise-new (lambda (resolve reject)
                  (condition-case error
-                     (let* ((url-user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57")
-                            (url-request-extra-headers headers)
-                            (url-request-method type)
-                            (url-request-data data)
-                            buf)
+                     (let ((url-request-extra-headers headers)
+                           (url-request-method type)
+                           (url-request-data data)
+                           buf)
                        (url-retrieve url
                                      (lambda (_)
                                        (let (resp-status
