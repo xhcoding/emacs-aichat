@@ -156,6 +156,14 @@ When you set this value, bingai will login to www.bing.com through the cookies i
   :group 'bingai
   :type 'boolean)
 
+(defcustom bingai-conversation-style 'balanced
+  "Conversation style."
+  :group 'bingai
+  :type '(radio
+          (const :tag "More Creative" creative)
+          (const :tag "More Balanced" balanced)
+          (const :tag "More Precise" precise)))
+
 (defun bingai--debug (str &rest args)
   "Print debug message to *BINGAI-DEBUG* buffer when `bingai-debug' is set `t'"
   (when bingai-debug
@@ -393,21 +401,8 @@ Re-fetching cookies from `bing--domain'"
   signature
   client-id)
 
-
-(cl-defstruct (bingai--session
-               (:constructor bingai--session-new)
-               (:copier nil))
-  conversation
-  chathub
-  (invocation-id 0)
-  (replying nil)
-  (buffer "")
-  resolve
-  reject
-  user-cb
-  )
-
-(async-defun bingai--make-conversation ()
+(async-defun bingai--create-conversation ()
+  "Create a conversation through the GET request `bingai--conversation-url'."
   (await (bingai--login))
   (seq-let
       (status headers body)
@@ -425,12 +420,34 @@ Re-fetching cookies from `bing--domain'"
            :signature (alist-get 'conversationSignature data)
            :client-id (alist-get 'clientId data)))))))
 
+(cl-defstruct (bingai--session
+               (:constructor bingai--session-new)
+               (:copier nil))
+  "A session structure.
+`conversation' represents the `bingai--conversation'.
+`chathub' represents the chathub websocket connection.
+`invocation-id' indicates the number of questions.
+`replying' indicates whether the reply is in progress.
+`buffer' saves the reply message for parsing.
+`resolve' and `reject' are promise callback, call `resolve' when the reply ends
+and call `reject' when error occurs.
+Call `user-cb' when a message arrives."
+  conversation
+  chathub
+  (invocation-id 0)
+  (replying nil)
+  (buffer "")
+  resolve
+  reject
+  user-cb
+  )
 
-(defconst bingai--chathub-url "wss://sydney.bing.com/sydney/ChatHub")
 
-(defconst bingai--message-delimiter (char-to-string #x1e))
+(defconst bingai--message-delimiter (char-to-string #x1e)
+  "Websocket json message delimiter.")
 
-(defun bingai--chathub-handle-message (session text)
+(defun bingai--chathub-parse-message (session text)
+  "Parse chathub websocket json message."
   (bingai--debug "Recv text:\n%s" text)
   (let ((buffer (concat (bingai--session-buffer session) text))
         (start-pos 0)
@@ -448,14 +465,25 @@ Re-fetching cookies from `bing--domain'"
                  (user-cb (bingai--session-user-cb session))
                  (is-final (= type 3)))
             (when (and user-cb (= type 1))
-              (funcall user-cb is-final object))
+              (condition-case error
+                  (funcall user-cb is-final object)
+                (error 
+                 (setf (bingai--session-replying session) nil)
+                 (websocket-close (bingai--session-chathub session))
+                 (funcall (bingai--session-reject session) (format "User callback error: %s" error)))))
             (when is-final
               (setf (bingai--session-replying session) nil)
               (funcall (bingai--session-resolve session) t)))
           (setq start-pos (1+ match-pos)))))
     (setf (bingai--session-buffer session) (substring buffer start-pos))))
 
-(defun bingai--make-chathub (session)
+(defconst bingai--chathub-url "wss://sydney.bing.com/sydney/ChatHub"
+  "The url of create chathub.")
+
+(defun bingai--create-chathub (session)
+  "Create a websocket connection to `bingai--chathub-url'.
+
+Call resolve when the handshake with chathub passed."
   (promise-new
    (lambda (resolve reject)
      (websocket-open bingai--chathub-url
@@ -468,7 +496,11 @@ Re-fetching cookies from `bing--domain'"
                                                                 bingai--message-delimiter)))
                      :on-close (lambda (_ws)
                                  (bingai--debug "====== chathub closed ======")
-                                 (setf (bingai--session-chathub session) nil))
+                                 (setf (bingai--session-chathub session) nil)
+                                 (when (bingai--session-replying session)
+                                   ;; close when replying
+                                   (setf (bingai--session-replying session) nil)
+                                   (funcall (bingai--session-reject session) "Chathub closed unexpectedly during reply.")))
                      :on-message (lambda (ws frame)
                                    (let ((text (websocket-frame-text frame)))
                                      (condition-case error
@@ -477,12 +509,56 @@ Re-fetching cookies from `bing--domain'"
                                            (json-read-from-string (car (split-string text bingai--message-delimiter)))
                                            (setf (websocket-on-message ws)
                                                  (lambda (_ws frame)
-                                                   (bingai--chathub-handle-message session (websocket-frame-text frame))))
+                                                   (bingai--chathub-parse-message session (websocket-frame-text frame))))
                                            (setf (bingai--session-chathub session) ws)
                                            (funcall resolve t))
                                        (error (funcall reject error)))))))))
 
-(defun bingai--make-request (session question reply-cb)
+(defun bingai--destroy-chathub (session)
+  (when-let ((chathub (bingai--session-chathub bingai--current-session)))
+    (when (websocket-openp chathub)
+      (websocket-close chathub))))
+
+
+(defun bingai--reply-options ()
+  (vector 
+   "nlu_direct_response_filter"
+   "deepleo" 
+   "disable_emoji_spoken_text" 
+   "responsible_ai_policy_2235" 
+   "enablemm"
+   "rai253"
+   "cricinfo"
+   "cricinfov2"
+   "dv3sugg"
+   (pcase bingai-conversation-style
+     ('creative "h3imaginative")
+     ('balanced "harmonyv3")
+     ('precise "h3precise"))))
+
+(defconst bingai--allowed-message-types 
+  [
+   "Chat"
+   "InternalSearchQuery"
+   "InternalSearchResult"
+   "Disengaged"
+   "InternalLoaderMessage"
+   "RenderCardRequest"
+   "AdsQuery"
+   "SemanticSerp"
+   "GenerateContentQuery"
+   ])
+
+(defconst binai--slice-ids
+  [
+   "h3adss0"
+   "301rai253"
+   "225cricinfo"
+   "224locals0"
+   ])
+
+(defun bingai--send-said (session said reply-cb)
+  "Send what the user said."
   (promise-new
    (lambda (resolve reject)
      (when-let* ((conversation (bingai--session-conversation session))
@@ -490,13 +566,15 @@ Re-fetching cookies from `bing--domain'"
                  (request (list :arguments
                                 (vector
                                  (list :source "cib"
-                                       :optionsSets (vector "deepleo" "enable_debug_commands" "disable_emoji_spoken_text" "enablemm")
+                                       :optionsSets (bingai--reply-options)
+                                       :allowedMessageTypes bingai--allowed-message-types
+                                       :sliceIds binai--slice-ids
                                        :isStartOfSession (if (= 0 invocation-id)
                                                              t
                                                            :json-false)
                                        :message (list :author "user"
                                                       :inputMethod "Keyboard"
-                                                      :text question
+                                                      :text said
                                                       :messageType "Chat")
                                        :conversationSignature (bingai--conversation-signature conversation)
                                        :participant (list :id (bingai--conversation-client-id conversation))
@@ -518,44 +596,52 @@ Re-fetching cookies from `bing--domain'"
              (bingai--session-reject session) reject
              (bingai--session-user-cb session) reply-cb)))))
 
-(defvar bingai--current-session nil) ;; only one session
+(defvar bingai--current-session nil  ;; only one session
+  "Bingai session.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun bingai--started-p ()
-  (if bingai--current-session
-      t
-    nil))
-
 (async-defun bingai--start ()
+  "Start a new bingai session."
   (await t)
-  (when (bingai--started-p)
+  (when bingai--current-session
     (bingai--stop bingai--current-session))
-  (when-let ((conversation (await (bingai--make-conversation)))
+  (when-let ((conversation (await (bingai--create-conversation)))
              (session (bingai--session-new
                        :conversation conversation)))
     (setq bingai--current-session session)
     t))
 
 (defun bingai--stop ()
-  (when (bingai--started-p)
+  "Stop current bingai session."
+  (when bingai--current-session
     (setf (bingai--session-conversation bingai--current-session) nil)
-    (when-let ((chathub (bingai--session-chathub bingai--current-session)))
-      (when (websocket-openp chathub)
-        (websocket-close chathub)))
+    (bingai--destroy-chathub bingai--current-session)
     (setf (bingai--session-invocation-id bingai--current-session) 0)
     (setq bingai--current-session nil)))
 
-(async-defun bingai--say (question reply-cb)
-  (unless (bingai--started-p)
+(async-defun bingai--say (said reply-cb)
+  "Say to bingai."
+  (unless bingai--current-session
     (await (bingai--start)))
 
   (unless (bingai--session-chathub bingai--current-session)
-    (await (bingai--make-chathub bingai--current-session)))
+    (await (bingai--create-chathub bingai--current-session)))
 
-  (if (bingai--session-replying bingai--current-session)
-      (error "Please wait the last reply is over.")
-    (await (bingai--make-request bingai--current-session question reply-cb))))
+  (await (bingai--send-said bingai--current-session said reply-cb)))
+
+(defun bingai--replying-p ()
+  "Whether bingai is currently replying."
+  (if (and bingai--current-session
+           (bingai--session-replying bingai--current-session))
+      t
+    nil))
+
+(defun bingai--stop-replying ()
+  "Stop the reply currently in progress."
+  (when (bingai--replying-p)
+    (setf (bingai--session-replying bingai--current-session) nil)
+    (bingai--destroy-chathub bingai--current-session)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai msg API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -563,16 +649,9 @@ Re-fetching cookies from `bing--domain'"
   (when (= 1 (alist-get 'type msg))
     (alist-get 'text
                (aref
-                (alist-get 'body
-                           (aref
-                            (alist-get 'adaptiveCards
-                                       (aref
-                                        (alist-get 'messages
-                                                   (aref (alist-get 'arguments msg) 0))
-                                        0))
-                            0))
-                0))
-    ))
+                (alist-get 'messages
+                           (aref (alist-get 'arguments msg) 0))
+                0))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; User API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -597,33 +676,35 @@ Re-fetching cookies from `bing--domain'"
   (when (and (car current-prefix-arg)
              (= (car current-prefix-arg) 4))
     (bingai--stop))
-  (let ((chat-buf (get-file-buffer bingai-file))
-        (reply-length 0))
-    (when (not chat-buf)
-      (setq chat-buf (find-file-noselect bingai-file)))
-    (switch-to-buffer chat-buf)
-    (with-current-buffer chat-buf
-      (goto-char (point-max))
-      (insert (format "\n# %s\n\n" say)))
-    (promise-then (bingai--say say
-                               (lambda (final msg)
-                                 (let ((type (alist-get 'type msg))
-                                       (text)
-                                       (insert-text))
-                                   (cond
-                                    ((= 1 type)
-                                     (setq text (bingai--msg-type-1-text msg))
-                                     (setq insert-text (substring text reply-length))
-                                     (setq reply-length (length text))
-                                     (with-current-buffer chat-buf
-                                       (mapc #'insert insert-text)))))))
-                  (lambda (_)
-                    (with-current-buffer chat-buf
-                      (insert "\n\n")
-                      )
-                    (message "Finished"))
-                  (lambda (error-msg)
-                    (message "error: %s" error-msg)))))
+  (if (bingai--replying-p)
+      (message "Please wait for the replying finiahed before saying.")
+    (let ((chat-buf (get-file-buffer bingai-file))
+          (reply-length 0))
+      (when (not chat-buf)
+        (setq chat-buf (find-file-noselect bingai-file)))
+      (switch-to-buffer chat-buf)
+      (with-current-buffer chat-buf
+        (goto-char (point-max))
+        (insert (format "\n# %s\n\n" say)))
+      (promise-then (bingai--say say
+                                 (lambda (final msg)
+                                   (let ((type (alist-get 'type msg))
+                                         (text)
+                                         (insert-text))
+                                     (cond
+                                      ((= 1 type)
+                                       (setq text (bingai--msg-type-1-text msg))
+                                       (setq insert-text (substring text reply-length))
+                                       (setq reply-length (length text))
+                                       (with-current-buffer chat-buf
+                                         (mapc #'insert insert-text)))))))
+                    (lambda (_)
+                      (with-current-buffer chat-buf
+                        (insert "\n\n")
+                        )
+                      (message "Finished"))
+                    (lambda (error-msg)
+                      (message "error: %s" error-msg))))))
 
 (provide 'bingai)
 
