@@ -139,24 +139,39 @@ All these parameters are defined as in `websocket-open'."
 
 ;;; Code:
 
-(defvar bingai-debug nil)
+(defgroup bingai nil
+  "Bing AI in Emacs."
+  :group 'tools
+  :prefix "bingai-")
 
-(defvar bingai-cookies-file nil)
+(defcustom bingai-cookies-file nil
+  "The path of www.bing.com cookies file.
+
+When you set this value, bingai will login to www.bing.com through the cookies in the file."
+  :group 'bingai
+  :type 'string)
+
+(defcustom bingai-debug nil
+  "When set to `t', it will output more debug message in the *BINGAI-DEBUG* buffer."
+  :group 'bingai
+  :type 'boolean)
 
 (defun bingai--debug (str &rest args)
+  "Print debug message to *BINGAI-DEBUG* buffer when `bingai-debug' is set `t'"
   (when bingai-debug
     (with-current-buffer (get-buffer-create "*BINGAI-DEBUG*")
       (goto-char (point-max))
       (insert (apply #'format str args) "\n"))))
 
-(defconst bingai--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57")
+(defconst bingai--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57"
+  "`bingai--user-agent' is used to set the value of User-Agent.")
 
 (defconst bingai--url-unreserved-chars
   '(?a ?b ?c ?d ?e ?f ?g ?h ?i ?j ?k ?l ?m ?n ?o ?p ?q ?r ?s ?t ?u ?v ?w ?x ?y ?z
        ?A ?B ?C ?D ?E ?F ?G ?H ?I ?J ?K ?L ?M ?N ?O ?P ?Q ?R ?S ?T ?U ?V ?W ?X ?Y ?Z
        ?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9
        ?- ?_ ?. ?~)
-  "`url-unreserved-chars' copied from Emacs 24.3 release candidate.
+  "`bingai--url-unreserved-chars' copied from Emacs 24.3 release candidate.
 This is used for making `bingai--urlencode-alist' RFC 3986 compliant
 for older Emacs versions.")
 
@@ -175,8 +190,18 @@ for older Emacs versions.")
                             (type nil)
                             (params nil)
                             (headers nil)
-                            (data nil)
-                            (callback nil))
+                            (data nil))
+  "Request URL with property list SETTINGS as follow. Return value is promise,
+the format of resolve value is (resp-status resp-headers resp-body).
+
+===================== ======================================================
+Keyword argument      Explanation
+===================== ======================================================
+TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
+PARAMS         (alist)   set \"?key=val\" part in URL
+HEADERS        (alist)   additional headers to send with the request
+DATA          (string)   data to be sent to the server
+"
   (when params
     (cl-assert (listp params) nil "PARAMS must be an alist.  Given: %S" params)
     (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
@@ -207,26 +232,29 @@ for older Emacs versions.")
                    (error (funcall reject error))))))
 
 (async-defun bingai--start-process (program &rest args)
+  "Async start process with PROGRAM and ARGS.
+
+Returns stdout on success, otherwise returns nil."
   (condition-case reason
       (car (await (promise:make-process-with-handler (cons program args) nil t)))
     (error nil)))
 
 (async-defun bingai--shell-command (command &optional dir)
+  "Async run COMMAND in DIR or `default-directory'.
+
+Returns stdout on success, otherwise returns nil."
   (condition-case reason
       (let ((default-directory (or dir default-directory)))
         (await (promise:make-process-with-handler (list shell-file-name shell-command-switch command))))
     (error nil)))
 
-(defconst bingai--get-cookies-script
-  "python -c \"import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires, c.domain, c.path, c.secure)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))\"")
-
-(defconst bingai--domain "bing.com")
-
 (async-defun bingai--check-deps ()
+  "Check if browser_cookie3 is installed."
   (when-let ((installed (await (bingai--shell-command "python -c \"import browser_cookie3\""))))
     t))
 
 (defun bingai--get-cookies-from-file (filename)
+  "Get `bingai--domain' cookies from FILENAME."
   (when (file-exists-p filename)
     (let ((cookies (json-read-file filename)))
       (mapcar (lambda (cookie)
@@ -245,7 +273,12 @@ for older Emacs versions.")
                   (list name value expires domain localpart secure)))
               cookies))))
 
+(defconst bingai--get-cookies-script
+  "python -c \"import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires, c.domain, c.path, c.secure)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))\""
+  "Shell script for get www.bing.com cookies.")
+
 (async-defun bingai--get-cookies ()
+  "Get `bingai--domain' cookies."
   (await nil)
   (if bingai-cookies-file
       (bingai--get-cookies-from-file bingai-cookies-file)
@@ -269,7 +302,14 @@ for older Emacs versions.")
                 (split-string stdout "\n" t))))))
 
 
+(defconst bingai--domain "bing.com"
+  "Bing domain for retrieve cookies.")
+
 (async-defun bingai--refresh-cookies ()
+  "Refresh `bing--domain' cookies.
+
+Delete all cookies from the cookie store where the domain matches `bing--domain'.
+Re-fetching cookies from `bing--domain'"
   (when-let ((bing-cookies (await (bingai--get-cookies))))
     (bingai--debug "bing-cookies:\n%s\n" bing-cookies)
     (ignore-errors (url-cookie-delete-cookies bingai--domain))
@@ -277,6 +317,7 @@ for older Emacs versions.")
       (apply #'url-cookie-store bing-cookie))))
 
 (defun bingai--login-p ()
+  "Check if you're already login."
   (when-let* ((host-cookies
                (seq-find (lambda (host)
                            (string= (car host) ".bing.com"))
@@ -289,6 +330,7 @@ for older Emacs versions.")
          (not (url-cookie-expired-p user)))))
 
 (async-defun bingai--login ()
+  "Login www.bing.com."
   (await t)
   (unless (bingai--login-p)
     (await (bingai--refresh-cookies))))
@@ -317,7 +359,8 @@ for older Emacs versions.")
 	        (substring rnd 18 20)
 	        (substring rnd 20 32))))
 
-(defconst bingai--create-conversation-url "https://edgeservices.bing.com/edgesvc/turing/conversation/create")
+(defconst bingai--create-conversation-url "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
+  "The url of create conversation.")
 
 (defconst bingai--headers
   `(("accept" . "application/json")
@@ -337,16 +380,18 @@ for older Emacs versions.")
     ("x-ms-client-request-id" . ,(bingai--uuid))
     ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32")
     ("referer" . "https://www.bing.com/search?q=Bing+AI&showconv=1")
-    ("referrer-policy" . "origin-when-cross-origin")))
+    ("referrer-policy" . "origin-when-cross-origin"))
+  "The headers of sending request to www.bing.com.")
 
 
 (cl-defstruct (bingai--conversation
                (:constructor bingai--conversation-new)
                (:copier nil))
+  "A conversation structure.
+`id', `signature' and `client-id' are obtained through the GET request `bingai--conversation-url' response."
   id
   signature
-  client-id
-  )
+  client-id)
 
 
 (cl-defstruct (bingai--session
@@ -355,7 +400,7 @@ for older Emacs versions.")
   conversation
   chathub
   (invocation-id 0)
-  (asking nil)
+  (replying nil)
   (buffer "")
   resolve
   reject
@@ -401,11 +446,11 @@ for older Emacs versions.")
           (bingai--debug "object:\n%s" object)
           (let* ((type (alist-get 'type object))
                  (user-cb (bingai--session-user-cb session))
-                 (is-final (= type 2)))
-            (when (and user-cb (member type '(1 2)))
+                 (is-final (= type 3)))
+            (when (and user-cb (= type 1))
               (funcall user-cb is-final object))
             (when is-final
-              (setf (bingai--session-asking session) nil)
+              (setf (bingai--session-replying session) nil)
               (funcall (bingai--session-resolve session) t)))
           (setq start-pos (1+ match-pos)))))
     (setf (bingai--session-buffer session) (substring buffer start-pos))))
@@ -467,7 +512,7 @@ for older Emacs versions.")
        (websocket-send-text (bingai--session-chathub session) result)
 
        (setf (bingai--session-invocation-id session) (1+ invocation-id)
-             (bingai--session-asking session) t
+             (bingai--session-replying session) t
              (bingai--session-buffer session) ""
              (bingai--session-resolve session) resolve
              (bingai--session-reject session) reject
@@ -508,7 +553,7 @@ for older Emacs versions.")
   (unless (bingai--session-chathub bingai--current-session)
     (await (bingai--make-chathub bingai--current-session)))
 
-  (if (bingai--session-asking bingai--current-session)
+  (if (bingai--session-replying bingai--current-session)
       (error "Please wait the last reply is over.")
     (await (bingai--make-request bingai--current-session question reply-cb))))
 
