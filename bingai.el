@@ -467,7 +467,7 @@ Call `user-cb' when a message arrives."
             (when (and user-cb (= type 1))
               (condition-case error
                   (funcall user-cb object)
-                (error 
+                (error
                  (setf (bingai--session-replying session) nil)
                  (websocket-close (bingai--session-chathub session))
                  (funcall (bingai--session-reject session) (format "User callback error: %s\n" error)))))
@@ -521,11 +521,11 @@ Call resolve when the handshake with chathub passed."
 
 
 (defun bingai--reply-options ()
-  (vector 
+  (vector
    "nlu_direct_response_filter"
-   "deepleo" 
-   "disable_emoji_spoken_text" 
-   "responsible_ai_policy_2235" 
+   "deepleo"
+   "disable_emoji_spoken_text"
+   "responsible_ai_policy_2235"
    "enablemm"
    "rai253"
    "cricinfo"
@@ -536,7 +536,7 @@ Call resolve when the handshake with chathub passed."
      ('balanced "harmonyv3")
      ('precise "h3precise"))))
 
-(defconst bingai--allowed-message-types 
+(defconst bingai--allowed-message-types
   [
    "Chat"
    "InternalSearchQuery"
@@ -667,9 +667,19 @@ Call resolve when the handshake with chathub passed."
                          (aref (alist-get 'arguments msg) 0))
               0)))
 
+(defun bingai--msg-type-1-search-results (msg)
+  "msg[arguments][0][messages][0][hiddenText]."
+  (when-let ((hidden-text (alist-get 'hiddenText
+                                     (aref
+                                      (alist-get 'messages
+                                                 (aref (alist-get 'arguments msg) 0))
+                                      0))))
+    (setq hidden-text (string-trim hidden-text "```json" "```"))
+    (ignore-errors (alist-get 'web_search_results (json-read-from-string hidden-text)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai-chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defcustom bingai-file (expand-file-name "aichat.org" user-emacs-directory)
+(defcustom bingai-file (expand-file-name "aichat.md" user-emacs-directory)
   "File path of save chat message."
   :group 'bingai
   :type 'string)
@@ -688,24 +698,32 @@ Call resolve when the handshake with chathub passed."
           url-debug t
           websocket-debug t))))
 
-(cl-defstruct (bingai--chat 
+(cl-defstruct (bingai--chat
                (:constructor bingai--chat-new)
                (:copier nil))
   "A chat structure.
 `buffer' is used to display chat message.
 `said' is what the user said.
 `replied-length' is the length of the reply.
-`reply-point' is where the reply is inserted."
+`reply-point' is where the reply is inserted.
+`search-results' is the results of web search.
+`enter-src' is the mark of markdown converted to org."
   buffer
   said
   (replied-length 0)
-  reply-point)
+  reply-point
+  search-results
+  enter-src)
 
 (defun bingai--chat-get-buffer ()
   "Get chat buffer."
   (let ((chat-buffer (get-file-buffer bingai-file)))
     (unless chat-buffer
       (setq chat-buffer (find-file-noselect bingai-file)))
+    (with-current-buffer chat-buffer
+      (when (derived-mode-p 'markdown-mode)
+        (unless markdown-hide-markup
+          (markdown-toggle-markup-hiding))))
     chat-buffer))
 
 (defun bingai--chat-say (chat new-p)
@@ -713,20 +731,23 @@ Call resolve when the handshake with chathub passed."
 NEW-P is t, which means it is a new conversation."
   (with-current-buffer (bingai--chat-buffer chat)
     (goto-char (point-max))
-    (if new-p
-        (insert "* ")
-      (insert "** "))
+    (let ((header-char (if (derived-mode-p 'org-mode) "*" "#")))
+      (if new-p
+          (insert "\n" header-char " ")
+        (insert "\n" header-char header-char " ")))
     (insert (bingai--chat-said chat))
-    (insert "\n")
+    (insert "\n\n")
     (setf (bingai--chat-reply-point chat) (point))))
 
-(defface bingai-chat-prompt-face '((t (:height 0.8 :inherit org-done)))
+(defface bingai-chat-prompt-face '((t (:height 0.8 :foreground "#006800")))
   "Face used for prompt overlay.")
 
 (defun bingai--chat-update-prompt (buffer text)
   (with-current-buffer buffer
     (save-excursion
-      (org-previous-visible-heading +1)
+      (if (derived-mode-p 'org-mode)
+          (org-previous-visible-heading +1)
+        (markdown-previous-visible-heading +1))
       (let* ((from (line-beginning-position))
              (to (line-end-position)))
         (remove-overlays from to 'bingai--chat-handle-reply t)
@@ -735,7 +756,7 @@ NEW-P is t, which means it is a new conversation."
             (overlay-put ov 'after-string
                          (propertize
                           (concat " " text)
-                          'face 'bingai-chat-prompt-face))    
+                          'face 'bingai-chat-prompt-face))
             (overlay-put ov 'bingai--chat-handle-reply t)))))))
 
 (defun bingai--chat-handle-reply (msg chat)
@@ -746,8 +767,8 @@ NEW-P is t, which means it is a new conversation."
                                (bingai--chat-update-prompt buffer text)))
       ("InternalLoaderMessage" (when-let ((text (bingai--msg-type-1-text msg)))
                                  (bingai--chat-update-prompt buffer text)))
-      ("InternalSearchResult")
-      ("RenderCardRequest")
+      ("InternalSearchResult" (when-let ((search-results (bingai--msg-type-1-search-results msg)))
+                                (setf (bingai--chat-search-results chat) search-results)))
       (_
        (when-let* ((text (bingai--msg-type-1-text msg))
                    (replied-length (bingai--chat-replied-length chat))
@@ -756,18 +777,45 @@ NEW-P is t, which means it is a new conversation."
          (with-current-buffer buffer
            (goto-char (bingai--chat-reply-point chat))
            (insert (substring text replied-length))
+
+           (when (derived-mode-p 'org-mode)
+             ;; convert [^1^] to [fn:1]
+             (save-excursion
+               (goto-char (- (bingai--chat-reply-point chat) 10))
+               (when (re-search-forward "\\(\\*\\(\\*.*\\*\\)\\*\\|\\[^\\([0-9]+\\)^\\]\\|```\\([a-z]*\\)\\)" nil t)
+                 (when (match-string 2)
+                   (replace-match "\\2"))
+                 (when (match-string 3)
+                   (replace-match "[fn:\\3]"))
+                 (when (match-string 4)
+                   (if (bingai--chat-enter-src chat)
+                       (replace-match "#+end_src")
+                     (replace-match "#+begin_src \\4"))
+                   (setf (bingai--chat-enter-src chat) (not (bingai--chat-enter-src chat)))))))
+
            (setf (bingai--chat-reply-point chat) (point)
                  (bingai--chat-replied-length chat) text-length)))))))
 
 (defun bingai--chat-handle-reply-finished (chat)
-  (bingai--chat-update-prompt (bingai--chat-buffer chat) nil)
+  ;; insert search result
+  (with-current-buffer (bingai--chat-buffer chat)
+    (insert "\n")
+    (mapc (lambda (result)
+            (insert (format "%s. " (alist-get 'index result)))
+            (if (derived-mode-p 'org-mode)
+                (org-insert-link nil (alist-get 'url result) (alist-get 'title result))
+              (insert (format "[%s](%s)" (alist-get 'title result) (alist-get 'url result))))
+            (insert "\n"))
+          (bingai--chat-search-results chat))
+    (insert "\n")
+    (bingai--chat-update-prompt (bingai--chat-buffer chat) nil))
   (message "Finished"))
 
 (defun bingai--chat-handle-reply-error (chat msg)
   (bingai--chat-update-prompt (bingai--chat-buffer chat) nil)
   (message "%s" msg))
 
-(defun bing-chat-stop-replying ()
+(defun bingai-stop-replying ()
   (interactive)
   (bingai--stop-replying))
 
