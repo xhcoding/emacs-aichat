@@ -1,7 +1,11 @@
 
+#+html: <p align="left">
+#+html:	<a href="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml"><img src="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml/badge.svg"/></a>
+#+html: </p>
+
 * BingAI Chat in Emacs
 
-#+html: <p align="center"><img src="bingai-chat.gif" width=800 height=600/></p>
+#+html: <p align="center"><img src="bingai-chat.gif" width=600 height=400/></p>
 
 * Setup
 
