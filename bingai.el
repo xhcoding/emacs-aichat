@@ -221,22 +221,23 @@ DATA          (string)   data to be sent to the server
                      (let ((url-user-agent bingai--user-agent)
                            (url-request-extra-headers headers)
                            (url-request-method type)
-                           (url-request-data data)
-                           buf)
-                       (url-retrieve url
-                                     (lambda (_)
-                                       (let (resp-status
-                                             resp-headers
-                                             resp-body)
-                                         (goto-char (point-min))
-                                         (when (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" url-http-end-of-headers t)
-                                           (setq resp-status (cons (match-string 1) (match-string 2))))
-                                         (while (re-search-forward "^\\([^:]*\\): \\(.+\\)" url-http-end-of-headers t)
-                                           (push (cons (match-string 1) (match-string 2)) resp-headers))
-                                         (goto-char (1+ url-http-end-of-headers))
-                                         (setq resp-body (buffer-substring (point) (point-max)))
-                                         (funcall resolve (list resp-status resp-headers resp-body))))
-                                     nil t))
+                           (url-request-data data))
+                       (with-current-buffer
+                           (url-retrieve url
+                                         (lambda (_)
+                                           (let (resp-status
+                                                 resp-headers
+                                                 resp-body)
+                                             (goto-char (point-min))
+                                             (when (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" url-http-end-of-headers t)
+                                               (setq resp-status (cons (match-string 1) (match-string 2))))
+                                             (while (re-search-forward "^\\([^:]*\\): \\(.+\\)" url-http-end-of-headers t)
+                                               (push (cons (match-string 1) (match-string 2)) resp-headers))
+                                             (goto-char (1+ url-http-end-of-headers))
+                                             (setq resp-body (buffer-substring (point) (point-max)))
+                                             (funcall resolve (list resp-status resp-headers resp-body))))
+                                         nil t)
+                         (set (make-local-variable 'url-user-agent) bingai--user-agent)))
                    (error (funcall reject error))))))
 
 (async-defun bingai--start-process (program &rest args)

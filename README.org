@@ -1,6 +1,8 @@
 
 * BingAI Chat in Emacs
 
+#+html: <p align="center"><img src="bingai-chat.gif" width=800 height=600/></p>
+
 * Setup
 
 ** Requirements
