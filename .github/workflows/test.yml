@@ -1,0 +1,28 @@
+name: test
+on: [ push, pull_request ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        emacs-version: [28.2]
+
+    steps:
+      - name: setenv
+        run: echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v3
+
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs-version }}
+
+      - uses: conao3/setup-cask@master
+        with:
+          version: snapshot
+
+      - name: install
+        run: "cask install"
+
+      - name: test
+        run: "cask exec ert-runner"
