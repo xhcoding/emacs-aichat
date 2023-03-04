@@ -466,11 +466,11 @@ Call `user-cb' when a message arrives."
                  (is-final (= type 3)))
             (when (and user-cb (= type 1))
               (condition-case error
-                  (funcall user-cb is-final object)
+                  (funcall user-cb object)
                 (error 
                  (setf (bingai--session-replying session) nil)
                  (websocket-close (bingai--session-chathub session))
-                 (funcall (bingai--session-reject session) (format "User callback error: %s" error)))))
+                 (funcall (bingai--session-reject session) (format "User callback error: %s\n" error)))))
             (when is-final
               (setf (bingai--session-replying session) nil)
               (funcall (bingai--session-resolve session) t)))
@@ -601,6 +601,12 @@ Call resolve when the handshake with chathub passed."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun bingai--started-p ()
+  "Whether is the session started."
+  (if bingai--current-session
+      t
+    nil))
+
 (async-defun bingai--start ()
   "Start a new bingai session."
   (await t)
@@ -646,19 +652,31 @@ Call resolve when the handshake with chathub passed."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai msg API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun bingai--msg-type-1-text (msg)
-  (when (= 1 (alist-get 'type msg))
-    (alist-get 'text
-               (aref
-                (alist-get 'messages
-                           (aref (alist-get 'arguments msg) 0))
-                0))))
+  "msg[arguments][0][messages][0][text]."
+  (alist-get 'text
+             (aref
+              (alist-get 'messages
+                         (aref (alist-get 'arguments msg) 0))
+              0)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; User API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun bingai--msg-type-1-message-type (msg)
+  "msg[arguments][0][messages][0][messageType]."
+  (alist-get 'messageType
+             (aref
+              (alist-get 'messages
+                         (aref (alist-get 'arguments msg) 0))
+              0)))
 
-(defvar bingai-file (expand-file-name "aichat.md" user-emacs-directory))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai-chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom bingai-file (expand-file-name "aichat.org" user-emacs-directory)
+  "File path of save chat message."
+  :group 'bingai
+  :type 'string)
 
 ;;;###autoload
 (defun bingai-toggle-debug ()
+  "Toggle debug mode."
   (interactive)
   (cond
    (bingai-debug
@@ -670,41 +688,110 @@ Call resolve when the handshake with chathub passed."
           url-debug t
           websocket-debug t))))
 
+(cl-defstruct (bingai--chat 
+               (:constructor bingai--chat-new)
+               (:copier nil))
+  "A chat structure.
+`buffer' is used to display chat message.
+`said' is what the user said.
+`replied-length' is the length of the reply.
+`reply-point' is where the reply is inserted."
+  buffer
+  said
+  (replied-length 0)
+  reply-point)
+
+(defun bingai--chat-get-buffer ()
+  "Get chat buffer."
+  (let ((chat-buffer (get-file-buffer bingai-file)))
+    (unless chat-buffer
+      (setq chat-buffer (find-file-noselect bingai-file)))
+    chat-buffer))
+
+(defun bingai--chat-say (chat new-p)
+  "Show user said.
+NEW-P is t, which means it is a new conversation."
+  (with-current-buffer (bingai--chat-buffer chat)
+    (goto-char (point-max))
+    (if new-p
+        (insert "* ")
+      (insert "** "))
+    (insert (bingai--chat-said chat))
+    (insert "\n")
+    (setf (bingai--chat-reply-point chat) (point))))
+
+(defface bingai-chat-prompt-face '((t (:height 0.8 :inherit org-done)))
+  "Face used for prompt overlay.")
+
+(defun bingai--chat-update-prompt (buffer text)
+  (with-current-buffer buffer
+    (save-excursion
+      (org-previous-visible-heading +1)
+      (let* ((from (line-beginning-position))
+             (to (line-end-position)))
+        (remove-overlays from to 'bingai--chat-handle-reply t)
+        (when text
+          (let ((ov (make-overlay from to)))
+            (overlay-put ov 'after-string
+                         (propertize
+                          (concat " " text)
+                          'face 'bingai-chat-prompt-face))    
+            (overlay-put ov 'bingai--chat-handle-reply t)))))))
+
+(defun bingai--chat-handle-reply (msg chat)
+  (let ((message-type (bingai--msg-type-1-message-type msg))
+        (buffer (bingai--chat-buffer chat)))
+    (pcase message-type
+      ("InternalSearchQuery" (when-let ((text (bingai--msg-type-1-text msg)))
+                               (bingai--chat-update-prompt buffer text)))
+      ("InternalLoaderMessage" (when-let ((text (bingai--msg-type-1-text msg)))
+                                 (bingai--chat-update-prompt buffer text)))
+      ("InternalSearchResult")
+      ("RenderCardRequest")
+      (_
+       (when-let* ((text (bingai--msg-type-1-text msg))
+                   (replied-length (bingai--chat-replied-length chat))
+                   (text-length (length text))
+                   (valid (> text-length replied-length)))
+         (with-current-buffer buffer
+           (goto-char (bingai--chat-reply-point chat))
+           (insert (substring text replied-length))
+           (setf (bingai--chat-reply-point chat) (point)
+                 (bingai--chat-replied-length chat) text-length)))))))
+
+(defun bingai--chat-handle-reply-finished (chat)
+  (bingai--chat-update-prompt (bingai--chat-buffer chat) nil)
+  (message "Finished"))
+
+(defun bingai--chat-handle-reply-error (chat msg)
+  (bingai--chat-update-prompt (bingai--chat-buffer chat) nil)
+  (message "%s" msg))
+
+(defun bing-chat-stop-replying ()
+  (interactive)
+  (bingai--stop-replying))
+
 ;;;###autoload
-(defun bingai-chat (say)
+(defun bingai-chat (said)
   (interactive "sYou say: ")
   (when (and (car current-prefix-arg)
              (= (car current-prefix-arg) 4))
     (bingai--stop))
   (if (bingai--replying-p)
       (message "Please wait for the replying finiahed before saying.")
-    (let ((chat-buf (get-file-buffer bingai-file))
-          (reply-length 0))
-      (when (not chat-buf)
-        (setq chat-buf (find-file-noselect bingai-file)))
-      (switch-to-buffer chat-buf)
-      (with-current-buffer chat-buf
-        (goto-char (point-max))
-        (insert (format "\n# %s\n\n" say)))
-      (promise-then (bingai--say say
-                                 (lambda (final msg)
-                                   (let ((type (alist-get 'type msg))
-                                         (text)
-                                         (insert-text))
-                                     (cond
-                                      ((= 1 type)
-                                       (setq text (bingai--msg-type-1-text msg))
-                                       (setq insert-text (substring text reply-length))
-                                       (setq reply-length (length text))
-                                       (with-current-buffer chat-buf
-                                         (mapc #'insert insert-text)))))))
+    (let* ((chat-buffer (bingai--chat-get-buffer))
+           (chat (bingai--chat-new
+                  :buffer chat-buffer
+                  :said said)))
+      (switch-to-buffer chat-buffer)
+      (bingai--chat-say chat (not (bingai--started-p)))
+      (promise-then (bingai--say said (lambda (msg)
+                                        (bingai--chat-handle-reply msg chat)))
                     (lambda (_)
-                      (with-current-buffer chat-buf
-                        (insert "\n\n")
-                        )
-                      (message "Finished"))
-                    (lambda (error-msg)
-                      (message "error: %s" error-msg))))))
+                      (bingai--chat-handle-reply-finished chat)
+                      )
+                    (lambda (msg)
+                      (bingai--chat-handle-reply-error chat msg))))))
 
 (provide 'bingai)
 
