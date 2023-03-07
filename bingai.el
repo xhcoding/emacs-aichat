@@ -707,14 +707,12 @@ Call resolve when the handshake with chathub passed."
 `said' is what the user said.
 `replied-length' is the length of the reply.
 `reply-point' is where the reply is inserted.
-`search-results' is the results of web search.
-`enter-src' is the mark of markdown converted to org."
+`search-results' is the results of web search."
   buffer
   said
   (replied-length 0)
   reply-point
-  search-results
-  enter-src)
+  search-results)
 
 (defun bingai--chat-get-buffer ()
   "Get chat buffer."
@@ -724,7 +722,9 @@ Call resolve when the handshake with chathub passed."
     (with-current-buffer chat-buffer
       (when (derived-mode-p 'markdown-mode)
         (unless markdown-hide-markup
-          (markdown-toggle-markup-hiding))))
+          (markdown-toggle-markup-hiding)))
+      (when (and (featurep 'pangu-spacing) pangu-spacing-mode)
+        (pangu-spacing-mode -1)))
     chat-buffer))
 
 (defun bingai--chat-say (chat new-p)
@@ -778,28 +778,28 @@ NEW-P is t, which means it is a new conversation."
          (with-current-buffer buffer
            (goto-char (bingai--chat-reply-point chat))
            (insert (substring text replied-length))
-
-           (when (derived-mode-p 'org-mode)
-             ;; convert [^1^] to [fn:1]
-             (save-excursion
-               (goto-char (- (bingai--chat-reply-point chat) 10))
-               (when (re-search-forward "\\(\\*\\(\\*.*\\*\\)\\*\\|\\[^\\([0-9]+\\)^\\]\\|```\\([a-z]*\\)\\)" nil t)
-                 (when (match-string 2)
-                   (replace-match "\\2"))
-                 (when (match-string 3)
-                   (replace-match "[fn:\\3]"))
-                 (when (match-string 4)
-                   (if (bingai--chat-enter-src chat)
-                       (replace-match "#+end_src")
-                     (replace-match "#+begin_src \\4"))
-                   (setf (bingai--chat-enter-src chat) (not (bingai--chat-enter-src chat)))))))
-
            (setf (bingai--chat-reply-point chat) (point)
                  (bingai--chat-replied-length chat) text-length)))))))
 
+(defun bingai--convert-to-org ()
+  (save-excursion
+    (org-previous-visible-heading +1)
+    (while (re-search-forward "\\(\\*\\(\\*.*\\*\\)\\*\\|\\[^\\([0-9]+\\)^\\]\\|`\\([^`]+\\)`\\|```\\([a-z]*\\(.\\|\n\\)*\\)```\\)" nil t)
+      (when (match-string 2)
+        (replace-match "\\2"))
+      (when (match-string 3)
+        (replace-match "[fn:\\3]"))
+      (when (match-string 4)
+        (replace-match "=\\4="))
+      (when (match-string 5)
+        (replace-match "#+begin_src \\5#+end_src")))))
+
 (defun bingai--chat-handle-reply-finished (chat)
-  ;; insert search result
   (with-current-buffer (bingai--chat-buffer chat)
+    (when (derived-mode-p 'org-mode)
+      (bingai--convert-to-org))
+
+    ;; insert search result
     (insert "\n")
     (mapc (lambda (result)
             (insert (format "%s. " (alist-get 'index result)))
