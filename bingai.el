@@ -743,9 +743,10 @@ NEW-P is t, which means it is a new conversation."
 (defface bingai-chat-prompt-face '((t (:height 0.8 :foreground "#006800")))
   "Face used for prompt overlay.")
 
-(defun bingai--chat-update-prompt (buffer text)
-  (with-current-buffer buffer
-    (save-excursion
+(defun bingai--chat-update-prompt (chat text)
+  (with-current-buffer (bingai--chat-buffer chat)
+    (save-mark-and-excursion
+      (goto-char (bingai--chat-reply-point chat))
       (if (derived-mode-p 'org-mode)
           (org-previous-visible-heading +1)
         (markdown-previous-visible-heading +1))
@@ -765,9 +766,9 @@ NEW-P is t, which means it is a new conversation."
         (buffer (bingai--chat-buffer chat)))
     (pcase message-type
       ("InternalSearchQuery" (when-let ((text (bingai--msg-type-1-text msg)))
-                               (bingai--chat-update-prompt buffer text)))
+                               (bingai--chat-update-prompt chat text)))
       ("InternalLoaderMessage" (when-let ((text (bingai--msg-type-1-text msg)))
-                                 (bingai--chat-update-prompt buffer text)))
+                                 (bingai--chat-update-prompt chat text)))
       ("InternalSearchResult" (when-let ((search-results (bingai--msg-type-1-search-results msg)))
                                 (setf (bingai--chat-search-results chat) search-results)))
       (_
@@ -776,44 +777,47 @@ NEW-P is t, which means it is a new conversation."
                    (text-length (length text))
                    (valid (> text-length replied-length)))
          (with-current-buffer buffer
-           (goto-char (bingai--chat-reply-point chat))
-           (insert (substring text replied-length))
-           (setf (bingai--chat-reply-point chat) (point)
-                 (bingai--chat-replied-length chat) text-length)))))))
+           (save-mark-and-excursion
+             (goto-char (bingai--chat-reply-point chat))
+             (insert (substring text replied-length))
+             (setf (bingai--chat-reply-point chat) (point)
+                   (bingai--chat-replied-length chat) text-length))))))))
 
 (defun bingai--convert-to-org ()
-  (save-excursion
-    (org-previous-visible-heading +1)
-    (while (re-search-forward "\\(\\*\\(\\*.*\\*\\)\\*\\|\\[^\\([0-9]+\\)^\\]\\|`\\([^`]+\\)`\\|```\\([a-z]*\\(.\\|\n\\)*\\)```\\)" nil t)
-      (when (match-string 2)
-        (replace-match "\\2"))
-      (when (match-string 3)
-        (replace-match "[fn:\\3]"))
-      (when (match-string 4)
-        (replace-match "=\\4="))
-      (when (match-string 5)
-        (replace-match "#+begin_src \\5#+end_src")))))
+  (org-previous-visible-heading +1)
+  (while (re-search-forward "\\(\\*\\(\\*.*\\*\\)\\*\\|\\[^\\([0-9]+\\)^\\]\\|`\\([^`]+\\)`\\|```\\([a-z]*\\(.\\|\n\\)*\\)```\\)" nil t)
+    (when (match-string 2)
+      (replace-match "\\2"))
+    (when (match-string 3)
+      (replace-match "[fn:\\3]"))
+    (when (match-string 4)
+      (replace-match "=\\4="))
+    (when (match-string 5)
+      (replace-match "#+begin_src \\5#+end_src"))))
 
 (defun bingai--chat-handle-reply-finished (chat)
   (with-current-buffer (bingai--chat-buffer chat)
-    (when (derived-mode-p 'org-mode)
-      (bingai--convert-to-org))
+    (save-mark-and-excursion
+      (when (derived-mode-p 'org-mode)
+        (bingai--convert-to-org))
 
-    ;; insert search result
-    (insert "\n")
-    (mapc (lambda (result)
-            (insert (format "%s. " (alist-get 'index result)))
-            (if (derived-mode-p 'org-mode)
-                (org-insert-link nil (alist-get 'url result) (alist-get 'title result))
-              (insert (format "[%s](%s)" (alist-get 'title result) (alist-get 'url result))))
-            (insert "\n"))
-          (bingai--chat-search-results chat))
-    (insert "\n")
-    (bingai--chat-update-prompt (bingai--chat-buffer chat) nil))
+      ;; insert search result
+      (goto-char (bingai--chat-reply-point chat))
+      (end-of-line)
+      (insert "\n")
+      (mapc (lambda (result)
+              (insert (format "%s. " (alist-get 'index result)))
+              (if (derived-mode-p 'org-mode)
+                  (org-insert-link nil (alist-get 'url result) (alist-get 'title result))
+                (insert (format "[%s](%s)" (alist-get 'title result) (alist-get 'url result))))
+              (insert "\n"))
+            (bingai--chat-search-results chat))
+      (insert "\n")))
+  (bingai--chat-update-prompt chat nil)
   (message "Finished"))
 
 (defun bingai--chat-handle-reply-error (chat msg)
-  (bingai--chat-update-prompt (bingai--chat-buffer chat) nil)
+  (bingai--chat-update-prompt chat nil)
   (message "%s" msg))
 
 (defun bingai-stop-replying ()
