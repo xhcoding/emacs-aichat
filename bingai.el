@@ -680,10 +680,15 @@ Call resolve when the handshake with chathub passed."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai-chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defcustom bingai-file (expand-file-name "aichat.md" user-emacs-directory)
+(defcustom bingai-chat-file (expand-file-name "aichat.md" user-emacs-directory)
   "File path of save chat message."
   :group 'bingai
   :type 'string)
+
+(defcustom bingai-chat-display-buffer-function 'switch-to-buffer
+  "The function of how to display `bingai-chat-file' buffer."
+  :group 'bingai
+  :type 'symbol)
 
 ;;;###autoload
 (defun bingai-toggle-debug ()
@@ -716,9 +721,9 @@ Call resolve when the handshake with chathub passed."
 
 (defun bingai--chat-get-buffer ()
   "Get chat buffer."
-  (let ((chat-buffer (get-file-buffer bingai-file)))
+  (let ((chat-buffer (get-file-buffer bingai-chat-file)))
     (unless chat-buffer
-      (setq chat-buffer (find-file-noselect bingai-file)))
+      (setq chat-buffer (find-file-noselect bingai-chat-file)))
     (with-current-buffer chat-buffer
       (when (derived-mode-p 'markdown-mode)
         (unless markdown-hide-markup
@@ -836,7 +841,9 @@ NEW-P is t, which means it is a new conversation."
            (chat (bingai--chat-new
                   :buffer chat-buffer
                   :said said)))
-      (switch-to-buffer chat-buffer)
+      (if (and bingai-display-buffer-function (functionp bingai-display-buffer-function))
+          (funcall bingai-chat-display-buffer-function chat-buffer)
+        (switch-to-buffer chat-buffer))
       (bingai--chat-say chat (not (bingai--started-p)))
       (promise-then (bingai--say said (lambda (msg)
                                         (bingai--chat-handle-reply msg chat)))
