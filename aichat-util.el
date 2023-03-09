@@ -1,0 +1,867 @@
+;;; aichat-util.el --- aichat-util   -*- lexical-binding: t; -*-
+
+;; Filename: aichat-util.el
+;; Description: aichat-util
+;; Author: xhcoding <xhcoding@foxmail.com>
+;; Maintainer: xhcoding <xhcoding@foxmail.com>
+;; Copyright (C) 2023, xhcoding, all rights reserved.
+;; Created: 2023-03-04 22:04:05
+;; Version: 0.1
+;; Last-Updated: 2023-03-04 22:04:05
+;;           By: xhcoding
+;; URL: https://github.com/xhcoding/emacs-aichat
+;; Keywords: 
+;; Compatibility: GNU Emacs 30.0.50
+;;
+;; Features that might be required by this library:
+;;
+;; 
+;;
+
+;;; This file is NOT part of GNU Emacs
+
+;;; License
+;;
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
+;; Floor, Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+;;
+;; aichat-util
+;; 
+
+;;; Installation:
+;;
+;; Put aichat-util.el to your load-path.
+;; The load-path is usually ~/elisp/.
+;; It's set in your ~/.emacs like this:
+;; (add-to-list 'load-path (expand-file-name "~/elisp"))
+;;
+;; And the following to your ~/.emacs startup file.
+;;
+;; (require 'aichat-util)
+;;
+;; No need more.
+
+;;; Customize:
+;;
+;; 
+;;
+;; All of the above can customize by:
+;;      M-x customize-group RET aichat-util RET
+;;
+
+;;; Change log:
+;;
+;; 2023/03/04
+;;      * First released.
+;;
+
+;;; Acknowledgements:
+;;
+;; 
+;;
+
+;;; TODO
+;;
+;; 
+;;
+
+;;; Require
+(eval-when-compile (require 'cl-lib))
+
+(require 'url)
+(require 'url-http)
+
+;;; Code:
+
+(defcustom aichat-debug nil
+  "When set to `t', it will output more debug message in the *AICHAT-DEBUG* buffer."
+  :group 'aichat
+  :type 'boolean)
+
+(defcustom aichat-user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57"
+  "`aichat-user-agent' is used to set the value of User-Agent."
+  :group 'aichat
+  :type 'string)
+
+(defun aichat-debug (str &rest args)
+  "Print debug message to *AICHAT-DEBUG* buffer when `aichat-debug' is set `t'"
+  (when aichat-debug
+    (with-current-buffer (get-buffer-create "*AICHAT-DEBUG*")
+      (goto-char (point-max))
+      (insert (apply #'format str args) "\n"))))
+
+(defun aichat--http-urlencode-alist (alist)
+  "Hexify ALIST fields according to RFC3986."
+  (cl-loop for sep = "" then "&"
+           for (k . v) in alist
+           concat sep
+           concat (url-hexify-string (format "%s" k))
+           concat "="
+           concat (url-hexify-string (format "%s" v))))
+
+(defun aichat--http-report-data (&rest _)
+  "Report http data for stream request."
+  ;; (message "buffer:\n|%s|" (buffer-string))
+  ;; (message "report point - point-max:\n|%s|" (buffer-substring aichat--http-report-point (point-max)))
+  (unless aichat--http-reported-header-p
+    (save-mark-and-excursion
+      (goto-char (point-min))
+      (when (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" url-http-end-of-headers t)
+        (setq-local aichat--http-response-status (cons (match-string 1) (match-string 2)))
+        (when aichat--http-response-callback
+          (funcall aichat--http-response-callback 'status aichat--http-response-status)))
+      (while (re-search-forward "^\\([^:]*\\): \\(.+\\)"
+                                url-http-end-of-headers t)
+        (let ((header-key (match-string 1))
+              (header-value (match-string 2)))
+          (push (cons header-key header-value)
+                aichat--http-response-headers)
+          (when (string= "content-length" (downcase header-key))
+            (setq-local aichat--http-response-chunked-p nil))))
+      (when aichat--http-response-callback
+        (funcall aichat--http-response-callback 'headers aichat--http-response-headers)))
+    (setq-local aichat--http-report-point (min (+ 1 url-http-end-of-headers) (point-max)))
+    (setq-local aichat--http-reported-header-p t))
+  (when-let* ((point-end (if aichat--http-response-chunked-p (- (point-max) 2) (point-max)))
+              (body (buffer-substring aichat--http-report-point point-end)))
+    (unless (string-empty-p body)
+      (when aichat--http-response-callback
+        (funcall aichat--http-response-callback 'body body))      
+      (setq-local aichat--http-response-body (concat aichat--http-response-body body)))
+    (setq-local aichat--http-report-point point-end)))
+
+;;; The following functions are copied from the url-http.el
+
+(defun aichat--url-display-message (fmt &rest args)
+  "Like `message', but do nothing if `url-show-status' is nil."
+  (when (and url-show-status
+             (not (and url-current-object (url-silent url-current-object)))
+             fmt)
+    (apply #'message fmt args)))
+
+(defun aichat--url-http-content-length-after-change-function (_st nd _length)
+  "Function used when we DO know how long the document is going to be.
+More sophisticated percentage downloaded, etc.
+Also does minimal parsing of HTTP headers and will actually cause
+the callback to be triggered."
+  (if url-http-content-type
+      (aichat--url-display-message
+       "Reading [%s]... %s of %s (%d%%)"
+       url-http-content-type
+       (funcall byte-count-to-string-function (- nd url-http-end-of-headers))
+       (funcall byte-count-to-string-function url-http-content-length)
+       (url-percentage (- nd url-http-end-of-headers)
+		               url-http-content-length))
+    (aichat--url-display-message
+     "Reading... %s of %s (%d%%)"
+     (funcall byte-count-to-string-function (- nd url-http-end-of-headers))
+     (funcall byte-count-to-string-function url-http-content-length)
+     (url-percentage (- nd url-http-end-of-headers)
+		             url-http-content-length)))
+  
+  ;; add this line
+  (aichat--http-report-data)
+  
+  (if (> (- nd url-http-end-of-headers) url-http-content-length)
+      (progn
+	    ;; Found the end of the document!  Wheee!
+	    (url-lazy-message "Reading... done.")
+	    (if (url-http-parse-headers)
+	        (url-http-activate-callback)))))
+
+(defun aichat--url-http-chunked-encoding-after-change-function (st nd length)
+  "Function used when dealing with chunked encoding.
+Cannot give a sophisticated percentage, but we need a different
+function to look for the special 0-length chunk that signifies
+the end of the document."
+  (if url-http-chunked-last-crlf-missing
+      (progn
+        (goto-char url-http-chunked-last-crlf-missing)
+        (if (not (looking-at "\r\n"))
+	        (url-http-debug
+             "Still spinning for the terminator of last chunk...")
+          (url-http-debug "Saw the last CRLF.")
+          (delete-region (match-beginning 0) (match-end 0))
+          (when (url-http-parse-headers)
+	        (url-http-activate-callback))))
+    (save-excursion
+      (goto-char st)
+      (let ((read-next-chunk t)
+	        (case-fold-search t)
+	        (regexp nil)
+	        (no-initial-crlf nil))
+        ;; We need to loop thru looking for more chunks even within
+        ;; one after-change-function call.
+        (while read-next-chunk
+	      (setq no-initial-crlf (= 0 url-http-chunked-counter))
+	      (url-http-debug "Reading chunk %d (%d %d %d)"
+			              url-http-chunked-counter st nd length)
+	      (setq regexp (if no-initial-crlf
+			               "\\([0-9a-z]+\\).*\r?\n"
+		                 "\r?\n\\([0-9a-z]+\\).*\r?\n"))
+
+	      (if url-http-chunked-start
+	          ;; We know how long the chunk is supposed to be, skip over
+	          ;; leading crap if possible.
+	          (if (> nd (+ url-http-chunked-start url-http-chunked-length))
+		          (progn
+		            (url-http-debug "Got to the end of chunk #%d!"
+				                    url-http-chunked-counter)
+		            (goto-char (+ url-http-chunked-start
+				                  url-http-chunked-length)))
+	            (url-http-debug "Still need %d bytes to hit end of chunk"
+			                    (- (+ url-http-chunked-start
+				                      url-http-chunked-length)
+				                   nd))
+	            (setq read-next-chunk nil)))
+	      (if (not read-next-chunk)
+	          (url-http-debug "Still spinning for next chunk...")
+	        (if no-initial-crlf (skip-chars-forward "\r\n"))
+	        (if (not (looking-at regexp))
+	            (progn
+	              ;; Must not have received the entirety of the chunk header,
+		          ;; need to spin some more.
+		          (url-http-debug "Did not see start of chunk @ %d!" (point))
+		          (setq read-next-chunk nil))
+              ;; The data we got may have started in the middle of the
+              ;; initial chunk header, so move back to the start of the
+              ;; line and re-compute.
+              (when (= url-http-chunked-counter 0)
+                (beginning-of-line)
+                (looking-at regexp))
+              (add-text-properties (match-beginning 0) (match-end 0)
+                                   (list 'chunked-encoding t
+				                         'face 'cursor
+				                         'invisible t))
+	          (setq url-http-chunked-length
+                    (string-to-number (buffer-substring (match-beginning 1)
+                                                        (match-end 1))
+                                      16)
+		            url-http-chunked-counter (1+ url-http-chunked-counter)
+		            url-http-chunked-start (set-marker
+					                        (or url-http-chunked-start
+					                            (make-marker))
+					                        (match-end 0)))
+	          (delete-region (match-beginning 0) (match-end 0))
+	          (url-http-debug "Saw start of chunk %d (length=%d, start=%d"
+			                  url-http-chunked-counter url-http-chunked-length
+			                  (marker-position url-http-chunked-start))
+              
+              ;; add this line
+              (aichat--http-report-data)
+              
+	          (if (= 0 url-http-chunked-length)
+		          (progn
+		            ;; Found the end of the document!  Wheee!
+		            (url-http-debug "Saw end of stream chunk!")
+		            (setq read-next-chunk nil)
+		            ;; Every chunk, even the last 0-length one, is
+		            ;; terminated by CRLF.  Skip it.
+		            (if (not (looking-at "\r?\n"))
+                        (progn
+	                      (url-http-debug
+                           "Spinning for the terminator of last chunk...")
+                          (setq url-http-chunked-last-crlf-missing
+                                (point)))
+		              (url-http-debug "Removing terminator of last chunk")
+		              (delete-region (match-beginning 0) (match-end 0))
+		              (when (re-search-forward "^\r?\n" nil t)
+		                (url-http-debug "Saw end of trailers..."))
+		              (when (url-http-parse-headers)
+		                (url-http-activate-callback))))))))))))
+
+(defun aichat--url-http-wait-for-headers-change-function (_st nd _length)
+  ;; This will wait for the headers to arrive and then splice in the
+  ;; next appropriate after-change-function, etc.
+  (url-http-debug "url-http-wait-for-headers-change-function (%s)"
+		          (buffer-name))
+  (let ((end-of-headers nil)
+	    (old-http nil)
+	    (process-buffer (current-buffer))
+	    ;; (content-length nil)
+        )
+    (when (not (bobp))
+      (goto-char (point-min))
+      (if (and (looking-at ".*\n")	; have one line at least
+	           (not (looking-at "^HTTP/[1-9]\\.[0-9]")))
+	      ;; Not HTTP/x.y data, must be 0.9
+	      ;; God, I wish this could die.
+	      (setq end-of-headers t
+		        url-http-end-of-headers 0
+		        old-http t)
+	    ;; Blank line at end of headers.
+	    (when (re-search-forward "^\r?\n" nil t)
+	      (backward-char 1)
+	      ;; Saw the end of the headers
+	      (url-http-debug "Saw end of headers... (%s)" (buffer-name))
+	      (setq url-http-end-of-headers (set-marker (make-marker)
+						                            (point))
+		        end-of-headers t)
+	      (setq nd (- nd (url-http-clean-headers)))))
+
+      (if (not end-of-headers)
+	      ;; Haven't seen the end of the headers yet, need to wait
+	      ;; for more data to arrive.
+	      nil
+	    (unless old-http
+	      (url-http-parse-response)
+	      (mail-narrow-to-head)
+	      (setq url-http-transfer-encoding (mail-fetch-field
+					                        "transfer-encoding")
+		        url-http-content-type (mail-fetch-field "content-type"))
+	      (if (mail-fetch-field "content-length")
+	          (setq url-http-content-length
+		            (string-to-number (mail-fetch-field "content-length"))))
+	      (widen))
+	    (when url-http-transfer-encoding
+	      (setq url-http-transfer-encoding
+		        (downcase url-http-transfer-encoding)))
+
+	    (cond
+	     ((null url-http-response-status)
+	      ;; We got back a headerless malformed response from the
+	      ;; server.
+	      (url-http-activate-callback))
+	     ((memq url-http-response-status '(204 205))
+	      (url-http-debug "%d response must have headers only (%s)."
+			              url-http-response-status (buffer-name))
+	      (when (url-http-parse-headers)
+	        (url-http-activate-callback)))
+	     ((string= "HEAD" url-http-method)
+	      ;; A HEAD request is _ALWAYS_ terminated by the header
+	      ;; information, regardless of any entity headers,
+	      ;; according to section 4.4 of the HTTP/1.1 draft.
+	      (url-http-debug "HEAD request must have headers only (%s)."
+			              (buffer-name))
+	      (when (url-http-parse-headers)
+	        (url-http-activate-callback)))
+	     ((string= "CONNECT" url-http-method)
+	      ;; A CONNECT request is finished, but we cannot stick this
+	      ;; back on the free connection list
+	      (url-http-debug "CONNECT request must have headers only.")
+	      (when (url-http-parse-headers)
+	        (url-http-activate-callback)))
+	     ((equal url-http-response-status 304)
+	      ;; Only allowed to have a header section.  We have to handle
+	      ;; this here instead of in url-http-parse-headers because if
+	      ;; you have a cached copy of something without a known
+	      ;; content-length, and try to retrieve it from the cache, we'd
+	      ;; fall into the 'being dumb' section and wait for the
+	      ;; connection to terminate, which means we'd wait for 10
+	      ;; seconds for the keep-alives to time out on some servers.
+	      (when (url-http-parse-headers)
+	        (url-http-activate-callback)))
+	     (old-http
+	      ;; HTTP/0.9 always signaled end-of-connection by closing the
+	      ;; connection.
+	      (url-http-debug
+	       "Saw HTTP/0.9 response, connection closed means end of document.")
+	      (setq url-http-after-change-function
+		        #'url-http-simple-after-change-function))
+	     ((equal url-http-transfer-encoding "chunked")
+	      (url-http-debug "Saw chunked encoding.")
+	      (setq url-http-after-change-function
+		        #'aichat--url-http-chunked-encoding-after-change-function)
+	      (when (> nd url-http-end-of-headers)
+	        (url-http-debug
+	         "Calling initial chunked-encoding for extra data at end of headers")
+	        (aichat--url-http-chunked-encoding-after-change-function
+	         (marker-position url-http-end-of-headers) nd
+	         (- nd url-http-end-of-headers))))
+	     ((integerp url-http-content-length)
+	      (url-http-debug
+	       "Got a content-length, being smart about document end.")
+	      (setq url-http-after-change-function
+		        #'aichat--url-http-content-length-after-change-function)
+	      (cond
+	       ((= 0 url-http-content-length)
+	        ;; We got a NULL body!  Activate the callback
+	        ;; immediately!
+	        (url-http-debug
+	         "Got 0-length content-length, activating callback immediately.")
+	        (when (url-http-parse-headers)
+	          (url-http-activate-callback)))
+	       ((> nd url-http-end-of-headers)
+	        ;; Have some leftover data
+	        (url-http-debug "Calling initial content-length for extra data at end of headers")
+	        (aichat--url-http-content-length-after-change-function
+	         (marker-position url-http-end-of-headers)
+	         nd
+	         (- nd url-http-end-of-headers)))
+	       (t
+	        nil)))
+	     (t
+	      (url-http-debug "No content-length, being dumb.")
+	      (setq url-http-after-change-function
+		        #'url-http-simple-after-change-function)))))
+    ;; We are still at the beginning of the buffer... must just be
+    ;; waiting for a response.
+    (url-http-debug "Spinning waiting for headers...")
+    (when (eq process-buffer (current-buffer))
+      (goto-char (point-max)))))
+
+(defun aichat--url-https-proxy-after-change-function (_st _nd _length)
+  (let* ((process-buffer (current-buffer))
+         (proc (get-buffer-process process-buffer)))
+    (goto-char (point-min))
+    (when (re-search-forward "^\r?\n" nil t)
+      (backward-char 1)
+      ;; Saw the end of the headers
+      (setq url-http-end-of-headers (set-marker (make-marker) (point)))
+      (url-http-parse-response)
+      (cond
+       ((null url-http-response-status)
+        ;; We got back a headerless malformed response from the
+        ;; server.
+        (url-http-activate-callback)
+        (error "Malformed response from proxy, fail!"))
+       ((= url-http-response-status 200)
+        (if (gnutls-available-p)
+            (condition-case e
+                (let ((tls-connection (gnutls-negotiate
+                                       :process proc
+                                       :hostname (puny-encode-domain (url-host url-current-object))
+                                       :verify-error nil)))
+                  ;; check certificate validity
+                  (setq tls-connection
+                        (nsm-verify-connection tls-connection
+                                               (puny-encode-domain (url-host url-current-object))
+                                               (url-port url-current-object)))
+                  (with-current-buffer process-buffer (erase-buffer))
+                  (set-process-buffer tls-connection process-buffer)
+                  (setq url-http-after-change-function
+                        #'aichat--url-http-wait-for-headers-change-function)
+                  (set-process-filter tls-connection 'url-http-generic-filter)
+                  (process-send-string tls-connection
+                                       (url-http-create-request)))
+              (gnutls-error
+               (url-http-activate-callback)
+               (error "gnutls-error: %s" e))
+              (error
+               (url-http-activate-callback)
+               (error "Error: %s" e)))
+          (error "Error: gnutls support needed!")))
+       (t
+        (url-http-debug "error response: %d" url-http-response-status)
+        (url-http-activate-callback))))))
+
+(defun aichat--url-https-proxy-connect (connection)
+  (setq url-http-after-change-function #'aichat--url-https-proxy-after-change-function)
+  (process-send-string
+   connection
+   (format
+    (concat "CONNECT %s:%d HTTP/1.1\r\n"
+            "Host: %s\r\n"
+            (let ((proxy-auth (let ((url-basic-auth-storage
+                                     'url-http-proxy-basic-auth-storage))
+                                (url-get-authentication url-http-proxy nil
+                                                        'any nil))))
+              (and proxy-auth
+                   (concat "Proxy-Authorization: " proxy-auth "\r\n")))
+            "\r\n")
+    (puny-encode-domain (url-host url-current-object))
+    (or (url-port url-current-object)
+        url-https-default-port)
+    (puny-encode-domain (url-host url-current-object)))))
+
+(defun aichat--url-http-async-sentinel (proc why)
+  ;; We are performing an asynchronous connection, and a status change
+  ;; has occurred.
+  (when (buffer-name (process-buffer proc))
+    (with-current-buffer (process-buffer proc)
+      (cond
+       (url-http-connection-opened
+	    (setq url-http-no-retry t)
+	    (url-http-end-of-document-sentinel proc why))
+       ((string= (substring why 0 4) "open")
+	    (setq url-http-connection-opened t)
+        (if (and url-http-proxy (string= "https" (url-type url-current-object)))
+            (aichat--url-https-proxy-connect proc)
+          (condition-case error
+              (process-send-string proc (url-http-create-request))
+            (file-error
+             (setq url-http-connection-opened nil)
+             (message "HTTP error: %s" error)))))
+       (t
+	    (setf (car url-callback-arguments)
+	          (nconc (list :error (list 'error 'connection-failed why
+					                    :host (url-host (or url-http-proxy url-current-object))
+					                    :service (url-port (or url-http-proxy url-current-object))))
+		             (car url-callback-arguments)))
+	    (url-http-activate-callback))))))
+
+(defun aichat--url-interactive-p ()
+  "Non-nil when the current request is from an interactive context."
+  (not (or url-request-noninteractive
+           (bound-and-true-p url-http-noninteractive))))
+
+(defconst url-aichat--http-default-port url-http-default-port)
+(defconst url-aichat--http-asynchronous-p  url-http-asynchronous-p)
+(defalias 'url-aichat--http-expand-file-name #'url-http-expand-file-name)
+(defalias 'url-aichat--http-file-exists-p #'url-http-file-exists-p)
+(defalias 'url-aichat--http-file-readable-p #'url-http-file-readable-p)
+(defalias 'url-aichat--http-file-attributes #'url-http-file-attributes)
+
+(defun url-aichat--http (url callback cbargs &optional retry-buffer gateway-method)
+  "Retrieve URL via HTTP asynchronously.
+URL must be a parsed URL.  See `url-generic-parse-url' for details.
+
+When retrieval is completed, execute the function CALLBACK,
+passing it an updated value of CBARGS as arguments.  The first
+element in CBARGS should be a plist describing what has happened
+so far during the request, as described in the docstring of
+`url-retrieve' (if in doubt, specify nil).  The current buffer
+when CALLBACK is executed is the retrieval buffer.
+
+Optional arg RETRY-BUFFER, if non-nil, specifies the buffer of a
+previous `url-http' call, which is being re-attempted.
+
+Optional arg GATEWAY-METHOD specifies the gateway to be used,
+overriding the value of `url-gateway-method'.
+
+The return value of this function is the retrieval buffer."
+  (cl-check-type url url "Need a pre-parsed URL.")
+  (setf (url-type url) (cadr (split-string (url-type url) "--")))
+  (let* (;; (host (url-host (or url-using-proxy url)))
+	     ;; (port (url-port (or url-using-proxy url)))
+	     (nsm-noninteractive (not (aichat--url-interactive-p)))
+         ;; The following binding is needed in url-open-stream, which
+         ;; is called from url-http-find-free-connection.
+         (url-current-object url)
+         (connection (url-http-find-free-connection (url-host url)
+                                                    (url-port url)
+                                                    gateway-method))
+         (mime-accept-string url-mime-accept-string)
+	     (buffer (or retry-buffer
+		             (generate-new-buffer
+                      (format " *http %s:%d*" (url-host url) (url-port url)))))
+         (referer (url-http--encode-string (url-http--get-referer url))))
+    (if (not connection)
+	    ;; Failed to open the connection for some reason
+	    (progn
+	      (kill-buffer buffer)
+	      (setq buffer nil)
+          (error "Could not create connection to %s:%d" (url-host url)
+                 (url-port url)))
+      (with-current-buffer buffer
+	    (mm-disable-multibyte)
+	    (setq url-current-object url
+	          mode-line-format "%b [%s]")
+
+	    (dolist (var '(url-http-end-of-headers
+		               url-http-content-type
+		               url-http-content-length
+		               url-http-transfer-encoding
+		               url-http-after-change-function
+		               url-http-response-version
+		               url-http-response-status
+                       url-http-chunked-last-crlf-missing
+		               url-http-chunked-length
+		               url-http-chunked-counter
+		               url-http-chunked-start
+		               url-callback-function
+		               url-callback-arguments
+		               url-show-status
+		               url-http-process
+		               url-http-method
+		               url-http-extra-headers
+		               url-http-noninteractive
+		               url-http-data
+		               url-http-target-url
+		               url-http-no-retry
+		               url-http-connection-opened
+                       url-mime-accept-string
+		               url-http-proxy
+                       url-http-referer))
+	      (set (make-local-variable var) nil))
+
+	    (setq url-http-method (or url-request-method "GET")
+	          url-http-extra-headers url-request-extra-headers
+	          url-http-noninteractive url-request-noninteractive
+	          url-http-data url-request-data
+	          url-http-process connection
+              url-http-chunked-last-crlf-missing nil
+	          url-http-chunked-length nil
+	          url-http-chunked-start nil
+	          url-http-chunked-counter 0
+	          url-callback-function callback
+	          url-callback-arguments cbargs
+	          url-http-after-change-function 'aichat--url-http-wait-for-headers-change-function
+	          url-http-target-url url-current-object
+	          url-http-no-retry retry-buffer
+	          url-http-connection-opened nil
+              url-mime-accept-string mime-accept-string
+	          url-http-proxy url-using-proxy
+              url-http-referer referer)
+
+	    (set-process-buffer connection buffer)
+	    (set-process-filter connection #'url-http-generic-filter)
+	    (pcase (process-status connection)
+          ('connect
+           ;; Asynchronous connection
+           (set-process-sentinel connection 'aichat--url-http-async-sentinel))
+          ('failed
+           ;; Asynchronous connection failed
+           (error "Could not create connection to %s:%d" (url-host url)
+                  (url-port url)))
+          (_
+           (if (and url-http-proxy (string= "https"
+                                            (url-type url-current-object)))
+               (aichat--url-https-proxy-connect connection)
+             (set-process-sentinel connection
+                                   #'url-http-end-of-document-sentinel)
+             (process-send-string connection (url-http-create-request)))))))
+    buffer))
+
+
+(defmacro aichat--url-https-create-secure-wrapper (method args)
+  `(defun ,(intern (format (if method "url-aichat--https-%s" "url-aichat--https") method)) ,args
+     ,(format "HTTPS wrapper around `%s' call." (or method "url-aichat--http"))
+     (,(intern (format (if method "url-aichat--http-%s" "url-aichat--http") method))
+      ,@(remove '&rest (remove '&optional (append args (if method nil '(nil 'tls))))))))
+
+(defconst url-aichat--https-default-port url-https-default-port)
+(defconst url-aichat--https-asynchronous-p  url-https-asynchronous-p)
+(defalias 'url-aichat--https-expand-file-name #'url-https-expand-file-name)
+(aichat--url-https-create-secure-wrapper nil (url callback cbargs))
+(aichat--url-https-create-secure-wrapper file-exists-p (url))
+(aichat--url-https-create-secure-wrapper file-readable-p (url))
+(aichat--url-https-create-secure-wrapper file-attributes (url &optional id-format))
+
+
+(defun aichat--url-proxy (url callback &optional cbargs)
+  ;; Retrieve URL from a proxy.
+  ;; Expects `url-using-proxy' to be bound to the specific proxy to use."
+  (setq url-using-proxy (url-generic-parse-url url-using-proxy))
+
+  (cond
+   ((string= (url-type url-using-proxy) "http")
+    (url-aichat--http url callback cbargs))
+   (t
+    (error "Don't know how to use proxy `%s'" url-using-proxy))))
+
+(defun aichat--url-retrieve-internal (url callback cbargs &optional silent
+				                          inhibit-cookies)
+  "Internal function; external interface is `url-retrieve'.
+The callback function will receive an updated value of CBARGS as
+arguments; its first element should be a plist specifying what has
+happened so far during the request, as described in the docstring
+of `url-retrieve' (if in doubt, specify nil).
+
+If SILENT, don't message progress reports and the like.
+If INHIBIT-COOKIES, cookies will neither be stored nor sent to
+the server.
+If URL is a multibyte string, it will be encoded as utf-8 and
+URL-encoded before it's used."
+  (url-do-setup)
+  (url-gc-dead-buffers)
+  (when (stringp url)
+    (set-text-properties 0 (length url) nil url)
+    (setq url (url-encode-url url)))
+  (if (not (url-p url))
+      (setq url (url-generic-parse-url url)))
+  (if (not (functionp callback))
+      (error "Must provide a callback function to url-retrieve"))
+  (unless (url-type url)
+    (error "Bad url: %s" (url-recreate-url url)))
+  (setf (url-silent url) silent)
+  (setf (url-asynchronous url) url-asynchronous)
+  (setf (url-use-cookies url) (not inhibit-cookies))
+  ;; Once in a while, remove old entries from the URL cache.
+  (when (zerop (% url-retrieve-number-of-calls 1000))
+    (condition-case error
+	    (url-cache-prune-cache)
+      (file-error
+       (message "Error when expiring the cache: %s" error))))
+  (setq url-retrieve-number-of-calls (1+ url-retrieve-number-of-calls))
+  (let ((loader (url-scheme-get-property (url-type url) 'loader))
+	    (url-using-proxy (if (url-host url)
+			                 (url-find-proxy-for-url url (url-host url))))
+	    (buffer nil)
+	    (asynch (url-scheme-get-property (url-type url) 'asynchronous-p)))
+    (when url-using-proxy
+      (setf asynch t
+	        loader #'aichat--url-proxy
+            (url-asynchronous url) t))
+    (if asynch
+	    (let ((url-current-object url))
+	      (setq buffer (funcall loader url callback cbargs)))
+      (setq buffer (funcall loader url))
+      (if buffer
+	      (with-current-buffer buffer
+	        (apply callback cbargs))))
+    (if url-history-track
+	    (url-history-update-url url (current-time)))
+    buffer))
+
+(defun aichat--url-retrieve (url callback &optional cbargs silent inhibit-cookies)
+  "Retrieve URL asynchronously and call CALLBACK with CBARGS when finished.
+URL is either a string or a parsed URL.  If it is a string
+containing characters that are not valid in a URI, those
+characters are percent-encoded; see `url-encode-url'.
+
+CALLBACK is called when the object has been completely retrieved, with
+the current buffer containing the object, and any MIME headers associated
+with it.  It is called as (apply CALLBACK STATUS CBARGS).
+STATUS is a plist representing what happened during the request,
+with most recent events first, or an empty list if no events have
+occurred.  Each pair is one of:
+
+\(:redirect REDIRECTED-TO) - the request was redirected to this URL.
+
+\(:error (error type . DATA)) - an error occurred.  TYPE is a
+symbol that says something about where the error occurred, and
+DATA is a list (possibly nil) that describes the error further.
+
+Return the buffer URL will load into, or nil if the process has
+already completed (i.e. URL was a mailto URL or similar; in this case
+the callback is not called).
+
+The variables `url-request-data', `url-request-method' and
+`url-request-extra-headers' can be dynamically bound around the
+request; dynamic binding of other variables doesn't necessarily
+take effect.
+
+If SILENT, then don't message progress reports and the like.
+If INHIBIT-COOKIES, cookies will neither be stored nor sent to
+the server.
+If URL is a multibyte string, it will be encoded as utf-8 and
+URL-encoded before it's used."
+  ;; XXX: There is code in Emacs that does dynamic binding
+  ;; of the following variables around url-retrieve:
+  ;; url-standalone-mode, url-gateway-unplugged,
+  ;; url-confirmation-func, url-cookie-multiple-line,
+  ;; url-cookie-{{,secure-}storage,confirmation}
+  ;; url-standalone-mode and url-gateway-unplugged should work as
+  ;; usual.  url-confirmation-func is only used in nnwarchive.el and
+  ;; webmail.el; the latter should be updated.  Is
+  ;; url-cookie-multiple-line needed anymore?  The other url-cookie-*
+  ;; are (for now) only used in synchronous retrievals.
+  (aichat--url-retrieve-internal url callback (cons nil cbargs) silent
+			                     inhibit-cookies))
+
+(cl-defun aichat-http (url &rest settings
+                           &key
+                           (type nil)
+                           (params nil)
+                           (headers nil)
+                           (data nil)
+                           (callback-data nil)
+                           (callback nil))
+  "Request URL with property list SETTINGS as follow. Return value is promise,
+the format of resolve value is (resp-status resp-headers resp-body).
+
+===================== ======================================================
+Keyword argument      Explanation
+===================== ======================================================
+TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
+PARAMS         (alist)   set \"?key=val\" part in URL
+HEADERS        (alist)   additional headers to send with the request
+DATA          (string)   data to be sent to the server
+CALLBACK-DATA (object)   data to be used on CALLBACK by aichat--http-callack-data
+CALLBACK      (string)   callbacl to receive reported http data.
+"
+  (when params
+    (cl-assert (listp params) nil "PARAMS must be an alist.  Given: %S" params)
+    (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
+                      (aichat--http-urlencode-alist params))))
+  (setq url (concat "aichat--" url))
+  (unless type
+    (setq type "GET"))
+  (promise-new (lambda (resolve reject)
+                 (condition-case error
+                     (let ((url-user-agent aichat-user-agent)
+                           (url-request-extra-headers headers)
+                           (url-request-method type)
+                           (url-request-data data))
+                       (with-current-buffer
+                           (aichat--url-retrieve url
+                                                 (lambda (_)
+                                                   (funcall resolve (list aichat--http-response-status
+                                                                          aichat--http-response-headers
+                                                                          aichat--http-response-body)))
+                                                 nil t)
+                         (set (make-local-variable 'url-user-agent) aichat-user-agent)
+                         (setq-local aichat--http-response-callback callback)
+                         (setq-local aichat--http-callback-data callback-data)
+                         (setq-local aichat--http-response-status nil)
+                         (setq-local aichat--http-response-headers nil)
+                         (setq-local aichat--http-response-body nil)
+                         (setq-local aichat--http-reported-header-p nil)
+                         (setq-local aichat--http-report-point 1)
+                         (setq-local aichat--http-response-chunked-p t)))
+                   (error (funcall reject error))))))
+
+(cl-defun aichat-http-event-source (url callback &rest settings
+                                        &key
+                                        (type nil)
+                                        (params nil)
+                                        (headers nil)
+                                        (data nil))
+  "Request URL with property list SETTINGS as follow.
+
+===================== ======================================================
+Keyword argument      Explanation
+===================== ======================================================
+TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
+PARAMS         (alist)   set \"?key=val\" part in URL
+HEADERS        (alist)   additional headers to send with the request
+DATA          (string)   data to be sent to the server
+"
+  (promise-then (aichat-http url
+                             :type type
+                             :params params
+                             :headers headers
+                             :data data
+                             :callback-data `((handle-data-p . t)
+                                              (event-buffer . nil)
+                                              (event-callback . ,callback))
+                             :callback (lambda (status data)
+                                         (when (alist-get 'handle-data-p aichat--http-callback-data)
+                                           (pcase status
+                                             ('status
+                                              (unless (string= "200" (car data))
+                                                (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
+                                             ('headers
+                                              (unless (string= "text/event-stream" (alist-get "Content-Type" data nil nil 'equal))
+                                                (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
+                                             ('body
+                                              (let ((buffer (concat (alist-get 'event-buffer aichat--http-callback-data) data))
+                                                    (start-pos 0)
+                                                    (match-start))
+                                                (while (setq match-start (string-match-p "\n\n" buffer start-pos))
+                                                  (let ((lines (split-string (substring buffer start-pos match-start) "\n"))
+                                                        (event-data nil)
+                                                        (event-id nil))
+                                                    (dolist (line lines)
+                                                      (seq-let (prefix data) (split-string line ": ")
+                                                        (cond 
+                                                         ((string= "data" prefix) (setq event-data (concat event-data data "\n")))
+                                                         ((string= "event" prefix) (setq event-id data)))))
+                                                    (when event-data
+                                                      (funcall (alist-get 'event-callback aichat--http-callback-data) event-id (string-trim-right event-data))))
+                                                  (setq start-pos (+ 2 match-start)))
+                                                (setf (alist-get 'event-buffer aichat--http-callback-data) (substring buffer start-pos))
+                                                ))))))
+                (lambda (value)
+                  (promise-resolve value))
+                (lambda (err)
+                  (promise-reject err))))
+
+(provide 'aichat-util)
+
+;;; aichat-util.el ends here
