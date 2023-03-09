@@ -602,6 +602,10 @@ Call resolve when the handshake with chathub passed."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun bingai--conversation-limit-p ()
+  (and bingai--current-session
+       (> (bingai--session-invocation-id bingai--current-session) 9)))
+
 (defun bingai--started-p ()
   "Whether is the session started."
   (if bingai--current-session
@@ -844,6 +848,8 @@ NEW-P is t, which means it is a new conversation."
       (if (and bingai-chat-display-function (functionp bingai-chat-display-function))
           (funcall bingai-chat-display-function chat-buffer)
         (switch-to-buffer chat-buffer))
+      (when (bingai--conversation-limit-p)
+        (bingai--stop))
       (bingai--chat-say chat (not (bingai--started-p)))
       (promise-then (bingai--say said (lambda (msg)
                                         (bingai--chat-handle-reply msg chat)))
