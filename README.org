@@ -5,7 +5,7 @@
 
 * BingAI Chat in Emacs
 
-#+html: <p align="center"><img src="bingai-chat.gif" width=600 height=400/></p>
+#+html: <p align="center"><img src="bingai-chat.gif" width=800 height=400/></p>
 
 * Setup
 
@@ -66,7 +66,12 @@ And the following to your ~/.emacs startup file.
 
 * Usage
 
-=M-x bingai-chat=  start a conversation
+- =M-x bingai-chat= : start a conversation
+- =C-u M-x bingai-chat= : restart a new conversation.
+- =M-x bingai-toggle-debug= : print io in =*BINGAI-DEBUG*= buffer.
 
-=C-u M-x bingai-chat= restart a new conversation.
+* Options
 
+- =bingai-chat-file= : File path of save chat message.
+- =bingai-chat-display-function= : The function of how to display =bingai-chat-file= buffer.
+- =bingai-conversation-style= : Conversation style:  =creative= , =balanced= and =precise= .
