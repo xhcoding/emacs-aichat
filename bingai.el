@@ -685,7 +685,7 @@ Call resolve when the handshake with chathub passed."
   :group 'bingai
   :type 'string)
 
-(defcustom bingai-chat-display-buffer-function 'switch-to-buffer
+(defcustom bingai-chat-display-function 'display-buffer
   "The function of how to display `bingai-chat-file' buffer."
   :group 'bingai
   :type 'symbol)
@@ -841,8 +841,8 @@ NEW-P is t, which means it is a new conversation."
            (chat (bingai--chat-new
                   :buffer chat-buffer
                   :said said)))
-      (if (and bingai-display-buffer-function (functionp bingai-display-buffer-function))
-          (funcall bingai-chat-display-buffer-function chat-buffer)
+      (if (and bingai-chat-display-function (functionp bingai-chat-display-function))
+          (funcall bingai-chat-display-function chat-buffer)
         (switch-to-buffer chat-buffer))
       (bingai--chat-say chat (not (bingai--started-p)))
       (promise-then (bingai--say said (lambda (msg)
