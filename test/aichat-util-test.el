@@ -123,7 +123,7 @@ Timeout:
                         (setq handled t)
                         (cancel-timer timer)
                         (throw 'done (promise-reject `(:rejected ,reason))))))
-      (while t (accept-process-output nil 30)))))
+      (while t (sit-for 20)))))
 
 ;;; Code:
 
@@ -140,31 +140,42 @@ Timeout:
       (should (not (get-buffer buffer-name))))))
 
 
-(ert-deftest aichat-http-get ()
+(defun aichat-http-get-with-backend (backend)
   (seq-let (status headers body)
       (promise-wait-value
        (promise-wait 100
          (aichat-http "https://httpbin.org/get"
+                      :backend backend
                       :params '(("hello". "world")))))
     (should (string= "200" (car status)))
     (let ((body-object (json-read-from-string body)))
       (should (equal (alist-get 'args body-object) '((hello ."world"))))
       (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))
 
-(ert-deftest aichat-http-get-with-proxy ()
+(ert-deftest aichat-http-get ()
+  (aichat-http-get-with-backend 'curl)
+  (aichat-http-get-with-backend 'url))
+
+(defun aichat-http-get-with-proxy-with-backend (backend)
   (seq-let (status headers body)
       (should-error
        (promise-wait-value
         (promise-wait 100
           (aichat-http "https://httpbin.org/get"
+                       :backend backend
                        :params '(("hello". "world"))
                        :proxy "error-proxy"))))))
 
-(ert-deftest aichat-http-post ()
+(ert-deftest aichat-http-get-with-proxy ()
+  (aichat-http-get-with-proxy-with-backend 'curl)
+  (aichat-http-get-with-proxy-with-backend 'url))
+
+(defun aichat-http-post-with-backend (backend)
   (seq-let (status headers body)
       (promise-wait-value
        (promise-wait 100
          (aichat-http "https://httpbin.org/post"
+                      :backend backend
                       :type "POST"
                       :headers '(("Content-Type" . "application/json")
                                  ("Authorization" . "Bearer sk-qZbRi"))
@@ -177,8 +188,11 @@ Timeout:
     (let ((body-object (json-read-from-string body)))
       (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))
 
+(ert-deftest aichat-http-post ()
+  (aichat-http-post-with-backend 'curl)
+  (aichat-http-post-with-backend 'url))
 
-(ert-deftest aichat-http-event-source ()
+(defun aichat-http-event-source-with-backend (backend)
   (let* ((datas)
          (server-file (expand-file-name "test/server.js" (file-name-directory (locate-library "aichat-util"))))
          (proc (start-process "event-server" nil "node" server-file)))
@@ -186,11 +200,16 @@ Timeout:
       (sleep-for 2)
       (promise-wait 10 (aichat-http-event-source "http://127.0.0.1:12345/stream"
                                                  (lambda (id data)
-                                                   (push (cons id data) datas))))
+                                                   (push (cons id data) datas))
+                                                 :backend backend))
       (should (= 3 (length datas)))
       (should (equal (cons "test" "this is data\nthis is new-line") (nth 0 datas)))
       (should (equal (cons "test" "this is data\nthis is new-line") (nth 1 datas)))
       (should (equal (cons "test" "this is data\nthis is new-line") (nth 2 datas))))))
+
+(ert-deftest aichat-http-event-source ()
+  (aichat-http-event-source-with-backend 'curl)
+  (aichat-http-event-source-with-backend 'url))
 
 (provide 'aichat-util-test)
 

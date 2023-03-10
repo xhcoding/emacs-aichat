@@ -97,6 +97,13 @@
   :group 'aichat
   :type 'string)
 
+(defcustom aichat-http-backend 'curl
+  "Http backend, curl or url."
+  :group 'aichat
+  :type '(radio
+          (const :tag "curl" curl)
+          (const :tag "url" url)))
+
 (defun aichat-debug (str &rest args)
   "Print debug message to *AICHAT-DEBUG* buffer when `aichat-debug' is set `t'"
   (when aichat-debug
@@ -112,6 +119,9 @@
            concat (url-hexify-string (format "%s" k))
            concat "="
            concat (url-hexify-string (format "%s" v))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; url-backend ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun aichat--http-report-data (&rest _)
   "Report http data for stream request."
@@ -145,6 +155,7 @@
     (setq-local aichat--http-report-point point-end)))
 
 ;;; The following functions are copied from the url-http.el
+
 (defun aichat--url-http-create-request ()
   "Create an HTTP request for `url-http-target-url'.
 Use `url-http-referer' as the Referer-header (subject to `url-privacy-level')."
@@ -901,15 +912,16 @@ URL-encoded before it's used."
   (aichat--url-retrieve-internal url callback (cons nil cbargs) silent
 			                     inhibit-cookies))
 
-(cl-defun aichat-http (url &rest settings
-                           &key
-                           (proxy nil)
-                           (type nil)
-                           (params nil)
-                           (headers nil)
-                           (data nil)
-                           (callback-data nil)
-                           (callback nil))
+(cl-defun aichat--url-http (url &rest settings
+                                &key
+                                (proxy nil)
+                                (type nil)
+                                (params nil)
+                                (headers nil)
+                                (data nil)
+                                (callback-data nil)
+                                (callback nil)
+                                &allow-other-keys)
   "Request URL with property list SETTINGS as follow. Return value is promise,
 the format of resolve value is (resp-status resp-headers resp-body).
 
@@ -962,8 +974,173 @@ CALLBACK      (string)   callbacl to receive reported http data.
                          (setq-local aichat--http-response-chunked-p t)))
                    (error (funcall reject error))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; curl-backend ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom aichat-curl-program "curl"
+  "The path of curl program."
+  :group 'aichat
+  :type 'string)
+
+(defun aichat--curl-process-filter (proc data)
+  (aichat-debug "curl filter data: \n%s" data)
+  (let ((buffer (process-buffer proc)))
+    (when (and (buffer-live-p buffer) (not (zerop (length data))))
+      (with-current-buffer buffer
+        (goto-char (point-max))
+        (insert data)
+
+        (goto-char aichat--curl-parser-point)
+
+        (when (eq 'status aichat--curl-parser-state)
+          (while (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" nil t)
+            (setq-local aichat--curl-response-status (cons (match-string 1) (match-string 2)))
+            (when aichat--curl-response-callback
+              (funcall aichat--curl-response-callback 'status aichat--curl-response-status))
+            (setq-local aichat--curl-parser-state 'header)
+            (setq-local aichat--curl-parser-point (point))))
+
+        (when (eq 'header aichat--curl-parser-state)
+          (when (re-search-forward "^\n" nil t)
+            (let ((bound (point)))
+              (goto-char aichat--curl-parser-point)
+              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)" bound t)
+                (push (cons (match-string 1) (match-string 2))
+                      aichat--curl-response-headers))
+              (when aichat--curl-response-callback
+                (funcall aichat--curl-response-callback 'headers aichat--curl-response-headers))
+              (setq-local aichat--curl-parser-point bound)
+              (setq-local aichat--curl-parser-state 'body))))
+
+        (when (eq 'body aichat--curl-parser-state)
+          (let ((body (buffer-substring aichat--curl-parser-point (point-max))))
+            (when aichat--curl-response-callback
+              (funcall aichat--curl-response-callback 'body body))
+            (setq-local aichat--curl-response-body (concat aichat--curl-response-body body))
+            (setq-local aichat--curl-parser-point (point-max))))))))
+
+(defun aichat--curl-process-sentinel (proc status)
+  (aichat-debug "curl process sentinel: %s" status)
+  (with-current-buffer (process-buffer proc)
+    (unwind-protect
+        (let ((stderr-str (with-current-buffer aichat--curl-stderr
+                            (buffer-string))))
+          (if (and (string= status "finished\n") (string-empty-p stderr-str))
+              (funcall aichat--curl-resolve (list aichat--curl-response-status aichat--curl-response-headers aichat--curl-response-body))
+            (funcall aichat--curl-reject (list status stderr-str))))
+      (funcall aichat--curl-cleanup))))
+
+
+(defun aichat--curl-make-config (url type headers proxy data)
+  (concat
+   (format "url = \"%s\"\n" url)
+   (format "request = \"%s\"\n" (if type type "GET"))
+   (format "user-agent = \"%s\"\n" aichat-user-agent)
+   (when headers
+     (cl-loop for (key . value) in headers
+              concat (format "header = \"%s: %s\"\n" key value)))
+   (when proxy
+     (format "proxy = http://%s\n" proxy))
+   (when data
+     (format "data = %s\n" (json-encode data)))))
+
+(cl-defun aichat--curl-http (url &rest settings
+                                 &key
+                                 (proxy nil)
+                                 (type nil)
+                                 (params nil)
+                                 (headers nil)
+                                 (data nil)
+                                 (callback-data nil)
+                                 (callback nil)
+                                 &allow-other-keys)
+  (when params
+    (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
+                      (aichat--http-urlencode-alist params))))
+  (promise-new (lambda (resolve reject)
+                 (let* ((command (list aichat-curl-program "--silent" "--show-error" "--include" "--config" "-"))
+                        (config (aichat--curl-make-config url type headers proxy data))
+                        (program (car command))
+                        (stdout (generate-new-buffer (concat "*" program "-stdout*")))
+                        (stderr (generate-new-buffer (concat "*" program "-stderr*")))
+                        (stderr-pipe-name (concat "*" program "-stderr-pipe*"))
+                        (stderr-pipe (make-pipe-process
+                                      :name stderr-pipe-name
+                                      :noquery t
+                                      :filter (lambda (_ output)
+                                                (with-current-buffer stderr
+                                                  (insert output)))))
+                        (cleanup (lambda ()
+                                   (kill-buffer stdout)
+                                   (delete-process stderr-pipe)
+                                   (kill-buffer stderr)
+                                   (kill-buffer stderr-pipe-name))))
+
+                   (aichat-debug "curl config: \n%s" config)
+                   (with-current-buffer stdout
+                     (setq-local aichat--curl-stderr stderr)
+                     (setq-local aichat--curl-cleanup cleanup)
+                     (setq-local aichat--curl-resolve resolve)
+                     (setq-local aichat--curl-reject reject)
+
+                     (setq-local aichat--curl-parser-state 'status)
+                     (setq-local aichat--curl-parser-point (point-min))
+
+                     (setq-local aichat--curl-response-status nil)
+                     (setq-local aichat--curl-response-headers nil)
+                     (setq-local aichat--curl-response-body nil)
+
+                     (setq-local aichat--curl-response-callback callback)
+                     (setq-local aichat--http-callback-data callback-data))
+
+                   (condition-case err
+                       (let ((proc (make-process
+                                    :name program
+                                    :buffer stdout
+                                    :command command
+                                    :stderr stderr-pipe
+                                    :filter #'aichat--curl-process-filter
+                                    :sentinel #'aichat--curl-process-sentinel)))
+                         (process-send-string proc config)
+                         (process-send-eof proc))
+                     (error (funcall cleanup)
+                            (signal (car err) (cdr err))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(cl-defun aichat-http (url &rest settings
+                           &key
+                           (backend nil)
+                           (proxy nil)
+                           (type nil)
+                           (params nil)
+                           (headers nil)
+                           (data nil)
+                           (callback-data nil)
+                           (callback nil))
+  "Request URL with property list SETTINGS as follow. Return value is promise,
+the format of resolve value is (resp-status resp-headers resp-body).
+
+===================== ======================================================
+Keyword argument      Explanation
+===================== ======================================================
+BACKEND       (symbol)   curl or url
+PROXY         (string)   proxy of current request
+TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
+PARAMS         (alist)   set \"?key=val\" part in URL
+HEADERS        (alist)   additional headers to send with the request
+DATA          (string)   data to be sent to the server
+CALLBACK-DATA (object)   data to be used on CALLBACK by aichat--http-callack-data
+CALLBACK      (string)   callbacl to receive reported http data.
+"
+  (let ((use-backend (if backend backend aichat-http-backend)))
+    (if (eq use-backend 'curl)
+        (apply #'aichat--curl-http url settings)
+      (apply #'aichat--url-http url settings))))
+
 (cl-defun aichat-http-event-source (url callback &rest settings
                                         &key
+                                        (backend nil)
                                         (proxy nil)
                                         (type nil)
                                         (params nil)
@@ -974,12 +1151,15 @@ CALLBACK      (string)   callbacl to receive reported http data.
 ===================== ======================================================
 Keyword argument      Explanation
 ===================== ======================================================
+BACKEND       (symbol)   curl or url
+PROXY         (string)   proxy of current request
 TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
 PARAMS         (alist)   set \"?key=val\" part in URL
 HEADERS        (alist)   additional headers to send with the request
 DATA          (string)   data to be sent to the server
 "
   (promise-then (aichat-http url
+                             :backend backend
                              :proxy proxy
                              :type type
                              :params params
