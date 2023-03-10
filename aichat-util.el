@@ -130,7 +130,7 @@
   (unless aichat--http-reported-header-p
     (save-mark-and-excursion
       (goto-char (point-min))
-      (when (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" url-http-end-of-headers t)
+      (when (re-search-forward "^HTTP/[1-9]\\.?[0-9]? \\([0-9]\\{3\\}\\) \\([a-zA-Z ]*\\)" url-http-end-of-headers t)
         (setq-local aichat--http-response-status (cons (match-string 1) (match-string 2)))
         (when aichat--http-response-callback
           (funcall aichat--http-response-callback 'status aichat--http-response-status)))
@@ -993,7 +993,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
         (goto-char aichat--curl-parser-point)
 
         (when (eq 'status aichat--curl-parser-state)
-          (while (re-search-forward "^HTTP/[1-9]\\.[0-9] \\([0-9]\\{3\\}\\) \\([a-zA-Z ]+\\)" nil t)
+          (while (re-search-forward "^HTTP/[1-9]\\.?[0-9]? \\([0-9]\\{3\\}\\) \\([a-zA-Z ]*\\)" nil t)
             (setq-local aichat--curl-response-status (cons (match-string 1) (match-string 2)))
             (when aichat--curl-response-callback
               (funcall aichat--curl-response-callback 'status aichat--curl-response-status))
@@ -1001,10 +1001,10 @@ CALLBACK      (string)   callbacl to receive reported http data.
             (setq-local aichat--curl-parser-point (point))))
 
         (when (eq 'header aichat--curl-parser-state)
-          (when (re-search-forward "^\n" nil t)
+          (when (re-search-forward "^\r?\n" nil t)
             (let ((bound (point)))
               (goto-char aichat--curl-parser-point)
-              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)" bound t)
+              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)[\r]" bound t)
                 (push (cons (match-string 1) (match-string 2))
                       aichat--curl-response-headers))
               (when aichat--curl-response-callback
