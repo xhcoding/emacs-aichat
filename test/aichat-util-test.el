@@ -172,7 +172,7 @@ Timeout:
                                                :stream t
                                                :messages (vector
                                                           (list :role "user"
-                                                                :content "Hello")))))))
+                                                                :content "Hello, 我是你的助理" )))))))
     (should (string= "200" (car status)))
     (let ((body-object (json-read-from-string body)))
       (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))

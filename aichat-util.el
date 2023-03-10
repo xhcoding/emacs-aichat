@@ -145,6 +145,153 @@
     (setq-local aichat--http-report-point point-end)))
 
 ;;; The following functions are copied from the url-http.el
+(defun aichat--url-http-create-request ()
+  "Create an HTTP request for `url-http-target-url'.
+Use `url-http-referer' as the Referer-header (subject to `url-privacy-level')."
+  (let* ((extra-headers)
+	     (request nil)
+	     (no-cache (cdr-safe (assoc "Pragma" url-http-extra-headers)))
+	     (using-proxy url-http-proxy)
+	     (proxy-auth (if (or (cdr-safe (assoc "Proxy-Authorization"
+					                          url-http-extra-headers))
+			                 (not using-proxy))
+			             nil
+		               (let ((url-basic-auth-storage
+			                  'url-http-proxy-basic-auth-storage))
+			             (url-get-authentication url-http-proxy nil 'any nil))))
+	     (real-fname (url-filename url-http-target-url))
+	     (host (url-host url-http-target-url))
+	     (auth (if (cdr-safe (assoc "Authorization" url-http-extra-headers))
+		           nil
+		         (url-get-authentication (or
+					                      (and (boundp 'proxy-info)
+					                           proxy-info)
+					                      url-http-target-url) nil 'any nil)))
+         (ref-url (url-http--encode-string url-http-referer)))
+    (if (equal "" real-fname)
+	    (setq real-fname "/"))
+    (setq no-cache (and no-cache (string-match "no-cache" no-cache)))
+    (if auth
+	    (setq auth (concat "Authorization: " auth "\r\n")))
+    (if proxy-auth
+	    (setq proxy-auth (concat "Proxy-Authorization: " proxy-auth "\r\n")))
+
+    ;; Protection against stupid values in the referrer
+    (if (and ref-url (stringp ref-url) (or (string= ref-url "file:nil")
+					                       (string= ref-url "")))
+	    (setq ref-url nil))
+
+    ;; url-http-extra-headers contains an assoc-list of
+    ;; header/value pairs that we need to put into the request.
+    (setq extra-headers (mapconcat
+			             (lambda (x)
+			               (concat (car x) ": " (cdr x)))
+			             url-http-extra-headers "\r\n"))
+    (if (not (equal extra-headers ""))
+	    (setq extra-headers (concat extra-headers "\r\n")))
+
+    ;; This was done with a call to `format'.  Concatenating parts has
+    ;; the advantage of keeping the parts of each header together and
+    ;; allows us to elide null lines directly, at the cost of making
+    ;; the layout less clear.
+    (setq request
+          (concat
+           ;; The request
+           (or url-http-method "GET") " "
+           (url-http--encode-string
+            (if (and using-proxy
+                     ;; Bug#35969.
+                     (not (equal "https" (url-type url-http-target-url))))
+                (let ((url (copy-sequence url-http-target-url)))
+                  (setf (url-host url) (puny-encode-domain (url-host url)))
+                  (url-recreate-url url))
+              real-fname))
+           " HTTP/" url-http-version "\r\n"
+           ;; Version of MIME we speak
+           "MIME-Version: 1.0\r\n"
+           ;; (maybe) Try to keep the connection open
+           "Connection: " (if (or using-proxy
+                                  (not url-http-attempt-keepalives))
+                              "close" "keep-alive") "\r\n"
+           ;; HTTP extensions we support
+           (if url-extensions-header
+               (format
+                "Extension: %s\r\n" url-extensions-header))
+           ;; Who we want to talk to
+           (if (/= (url-port url-http-target-url)
+                   (url-scheme-get-property
+                    (url-type url-http-target-url) 'default-port))
+               (format
+                "Host: %s:%d\r\n" (url-http--encode-string
+                                   (puny-encode-domain host))
+                (url-port url-http-target-url))
+             (format "Host: %s\r\n"
+                     (url-http--encode-string (puny-encode-domain host))))
+           ;; Who its from
+           (if url-personal-mail-address
+               (concat
+                "From: " url-personal-mail-address "\r\n"))
+           ;; Encodings we understand
+           (if (or url-mime-encoding-string
+		           ;; MS-Windows loads zlib dynamically, so recheck
+		           ;; in case they made it available since
+		           ;; initialization in url-vars.el.
+		           (and (eq 'system-type 'windows-nt)
+			            (fboundp 'zlib-available-p)
+			            (zlib-available-p)
+			            (setq url-mime-encoding-string "gzip")))
+               (concat
+                "Accept-encoding: " url-mime-encoding-string "\r\n"))
+           (if url-mime-charset-string
+               (concat
+                "Accept-charset: "
+                (url-http--encode-string url-mime-charset-string)
+                "\r\n"))
+           ;; Languages we understand
+           (if url-mime-language-string
+               (concat
+                "Accept-language: " url-mime-language-string "\r\n"))
+           ;; Types we understand
+           "Accept: " (or url-mime-accept-string "*/*") "\r\n"
+           ;; User agent
+           (url-http-user-agent-string)
+           ;; Proxy Authorization
+           proxy-auth
+           ;; Authorization
+           auth
+           ;; Cookies
+	       (when (url-use-cookies url-http-target-url)
+             (url-http--encode-string
+              (url-cookie-generate-header-lines
+               host real-fname
+               (equal "https" (url-type url-http-target-url)))))
+           ;; If-modified-since
+           (if (and (not no-cache)
+                    (member url-http-method '("GET" nil)))
+               (let ((tm (url-is-cached url-http-target-url)))
+                 (if tm
+                     (concat "If-modified-since: "
+                             (url-get-normalized-date tm) "\r\n"))))
+           ;; Whence we came
+           (if ref-url (concat
+                        "Referer: " ref-url "\r\n"))
+           extra-headers
+           ;; Length of data
+           (if url-http-data
+               (concat
+                "Content-length: " (number-to-string
+                                    (length (encode-coding-string url-http-data 'utf-8)))
+                "\r\n"))
+           ;; End request
+           "\r\n"
+           ;; Any data
+           url-http-data))
+    ;; Bug#23750
+    ;; (unless (= (string-bytes request)
+    ;;            (length request))
+    ;; (error "Multibyte text in HTTP request: %s" request))
+    (url-http-debug "Request is: \n%s" request)
+    request))
 
 (defun aichat--url-display-message (fmt &rest args)
   "Like `message', but do nothing if `url-show-status' is nil."
@@ -447,7 +594,7 @@ the end of the document."
                         #'aichat--url-http-wait-for-headers-change-function)
                   (set-process-filter tls-connection 'url-http-generic-filter)
                   (process-send-string tls-connection
-                                       (url-http-create-request)))
+                                       (aichat--url-http-create-request)))
               (gnutls-error
                (url-http-activate-callback)
                (error "gnutls-error: %s" e))
@@ -492,7 +639,7 @@ the end of the document."
         (if (and url-http-proxy (string= "https" (url-type url-current-object)))
             (aichat--url-https-proxy-connect proc)
           (condition-case error
-              (process-send-string proc (url-http-create-request))
+              (process-send-string proc (aichat--url-http-create-request))
             (file-error
              (setq url-http-connection-opened nil)
              (message "HTTP error: %s" error)))))
@@ -624,7 +771,7 @@ The return value of this function is the retrieval buffer."
                (aichat--url-https-proxy-connect connection)
              (set-process-sentinel connection
                                    #'url-http-end-of-document-sentinel)
-             (process-send-string connection (url-http-create-request)))))))
+             (process-send-string connection (aichat--url-http-create-request)))))))
     buffer))
 
 
@@ -795,10 +942,14 @@ CALLBACK      (string)   callbacl to receive reported http data.
                            (url-request-data data))
                        (with-current-buffer
                            (aichat--url-retrieve url
-                                                 (lambda (_)
-                                                   (funcall resolve (list aichat--http-response-status
-                                                                          aichat--http-response-headers
-                                                                          aichat--http-response-body)))
+                                                 (lambda (status)
+                                                   ;;(display-buffer (current-buffer))
+                                                   (let ((err (plist-get status :error)))
+                                                     (if err
+                                                         (funcall reject err)
+                                                       (funcall resolve (list aichat--http-response-status
+                                                                              aichat--http-response-headers
+                                                                              aichat--http-response-body)))))
                                                  nil t)
                          (set (make-local-variable 'url-user-agent) aichat-user-agent)
                          (setq-local aichat--http-response-callback callback)
@@ -813,6 +964,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
 
 (cl-defun aichat-http-event-source (url callback &rest settings
                                         &key
+                                        (proxy nil)
                                         (type nil)
                                         (params nil)
                                         (headers nil)
@@ -828,6 +980,7 @@ HEADERS        (alist)   additional headers to send with the request
 DATA          (string)   data to be sent to the server
 "
   (promise-then (aichat-http url
+                             :proxy proxy
                              :type type
                              :params params
                              :headers headers
