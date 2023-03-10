@@ -10,12 +10,12 @@
 ;; Last-Updated: 2023-03-04 22:04:05
 ;;           By: xhcoding
 ;; URL: https://github.com/xhcoding/emacs-aichat
-;; Keywords: 
+;; Keywords:
 ;; Compatibility: GNU Emacs 30.0.50
 ;;
 ;; Features that might be required by this library:
 ;;
-;; 
+;;
 ;;
 
 ;;; This file is NOT part of GNU Emacs
@@ -40,7 +40,7 @@
 ;;; Commentary:
 ;;
 ;; aichat-util
-;; 
+;;
 
 ;;; Installation:
 ;;
@@ -57,7 +57,7 @@
 
 ;;; Customize:
 ;;
-;; 
+;;
 ;;
 ;; All of the above can customize by:
 ;;      M-x customize-group RET aichat-util RET
@@ -71,12 +71,12 @@
 
 ;;; Acknowledgements:
 ;;
-;; 
+;;
 ;;
 
 ;;; TODO
 ;;
-;; 
+;;
 ;;
 
 ;;; Require
@@ -140,7 +140,7 @@
               (body (buffer-substring aichat--http-report-point point-end)))
     (unless (string-empty-p body)
       (when aichat--http-response-callback
-        (funcall aichat--http-response-callback 'body body))      
+        (funcall aichat--http-response-callback 'body body))
       (setq-local aichat--http-response-body (concat aichat--http-response-body body)))
     (setq-local aichat--http-report-point point-end)))
 
@@ -172,10 +172,10 @@ the callback to be triggered."
      (funcall byte-count-to-string-function url-http-content-length)
      (url-percentage (- nd url-http-end-of-headers)
 		             url-http-content-length)))
-  
+
   ;; add this line
   (aichat--http-report-data)
-  
+
   (if (> (- nd url-http-end-of-headers) url-http-content-length)
       (progn
 	    ;; Found the end of the document!  Wheee!
@@ -260,10 +260,10 @@ the end of the document."
 	          (url-http-debug "Saw start of chunk %d (length=%d, start=%d"
 			                  url-http-chunked-counter url-http-chunked-length
 			                  (marker-position url-http-chunked-start))
-              
+
               ;; add this line
               (aichat--http-report-data)
-              
+
 	          (if (= 0 url-http-chunked-length)
 		          (progn
 		            ;; Found the end of the document!  Wheee!
@@ -756,6 +756,7 @@ URL-encoded before it's used."
 
 (cl-defun aichat-http (url &rest settings
                            &key
+                           (proxy nil)
                            (type nil)
                            (params nil)
                            (headers nil)
@@ -768,6 +769,7 @@ the format of resolve value is (resp-status resp-headers resp-body).
 ===================== ======================================================
 Keyword argument      Explanation
 ===================== ======================================================
+PROXY         (string)   proxy of current request.
 TYPE          (string)   type of request to make: POST/GET/PUT/DELETE
 PARAMS         (alist)   set \"?key=val\" part in URL
 HEADERS        (alist)   additional headers to send with the request
@@ -784,7 +786,10 @@ CALLBACK      (string)   callbacl to receive reported http data.
     (setq type "GET"))
   (promise-new (lambda (resolve reject)
                  (condition-case error
-                     (let ((url-user-agent aichat-user-agent)
+                     (let ((url-proxy-services (if proxy
+                                                   (cons (cons  (car (split-string url ":")) proxy) url-proxy-services)
+                                                 url-proxy-services))
+                           (url-user-agent aichat-user-agent)
                            (url-request-extra-headers headers)
                            (url-request-method type)
                            (url-request-data data))
@@ -849,14 +854,13 @@ DATA          (string)   data to be sent to the server
                                                         (event-id nil))
                                                     (dolist (line lines)
                                                       (seq-let (prefix data) (split-string line ": ")
-                                                        (cond 
+                                                        (cond
                                                          ((string= "data" prefix) (setq event-data (concat event-data data "\n")))
                                                          ((string= "event" prefix) (setq event-id data)))))
                                                     (when event-data
                                                       (funcall (alist-get 'event-callback aichat--http-callback-data) event-id (string-trim-right event-data))))
                                                   (setq start-pos (+ 2 match-start)))
-                                                (setf (alist-get 'event-buffer aichat--http-callback-data) (substring buffer start-pos))
-                                                ))))))
+                                                (setf (alist-get 'event-buffer aichat--http-callback-data) (substring buffer start-pos))))))))
                 (lambda (value)
                   (promise-resolve value))
                 (lambda (err)

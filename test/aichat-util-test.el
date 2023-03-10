@@ -135,23 +135,35 @@ Timeout:
       (should (string= (concat msg "\n") (with-current-buffer buffer-name
                                            (buffer-string))))
       (kill-buffer buffer-name))
-    
     (let ((aichat-debug nil))
       (aichat-debug msg)
       (should (not (get-buffer buffer-name))))))
 
 
 (ert-deftest aichat-http-get ()
-  (seq-let (status headers body) (promise-wait-value (promise-wait 100 (aichat-http "https://httpbin.org/get" :params '(("hello". "world")))))
+  (seq-let (status headers body)
+      (promise-wait-value
+       (promise-wait 100
+         (aichat-http "https://httpbin.org/get"
+                      :params '(("hello". "world")))))
     (should (string= "200" (car status)))
     (let ((body-object (json-read-from-string body)))
       (should (equal (alist-get 'args body-object) '((hello ."world"))))
       (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))
 
+(ert-deftest aichat-http-get-with-proxy ()
+  (seq-let (status headers body)
+      (should-error
+       (promise-wait-value
+        (promise-wait 100
+          (aichat-http "https://httpbin.org/get"
+                       :params '(("hello". "world"))
+                       :proxy "error-proxy"))))))
+
 (ert-deftest aichat-http-post ()
-  (seq-let (status headers body) 
-      (promise-wait-value 
-       (promise-wait 100 
+  (seq-let (status headers body)
+      (promise-wait-value
+       (promise-wait 100
          (aichat-http "https://httpbin.org/post"
                       :type "POST"
                       :headers '(("Content-Type" . "application/json")
@@ -168,13 +180,13 @@ Timeout:
 
 (ert-deftest aichat-http-event-source ()
   (let* ((datas)
-        (server-file (expand-file-name "test/server.js" (file-name-directory (locate-library "aichat-util"))))
-        (proc (start-process "event-server" nil "node" server-file)))
+         (server-file (expand-file-name "test/server.js" (file-name-directory (locate-library "aichat-util"))))
+         (proc (start-process "event-server" nil "node" server-file)))
     (when proc
       (sleep-for 2)
-      (promise-wait 10 (aichat-http-event-source "http://127.0.0.1:12345/stream" 
-                           (lambda (id data)
-                             (push (cons id data) datas))))
+      (promise-wait 10 (aichat-http-event-source "http://127.0.0.1:12345/stream"
+                                                 (lambda (id data)
+                                                   (push (cons id data) datas))))
       (should (= 3 (length datas)))
       (should (equal (cons "test" "this is data\nthis is new-line") (nth 0 datas)))
       (should (equal (cons "test" "this is data\nthis is new-line") (nth 1 datas)))
