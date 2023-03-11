@@ -1004,7 +1004,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
           (when (re-search-forward "^\r?\n" nil t)
             (let ((bound (point)))
               (goto-char aichat--curl-parser-point)
-              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)[\r]" bound t)
+              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)\r?" bound t)
                 (push (cons (match-string 1) (match-string 2))
                       aichat--curl-response-headers))
               (when aichat--curl-response-callback
@@ -1058,7 +1058,10 @@ CALLBACK      (string)   callbacl to receive reported http data.
     (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
                       (aichat--http-urlencode-alist params))))
   (promise-new (lambda (resolve reject)
-                 (let* ((command (list aichat-curl-program "--silent" "--show-error" "--include" "--config" "-"))
+                 (let* ((command (append (list aichat-curl-program "--silent" "--show-error" "--include") 
+                                         (when callback
+                                           (list "--no-buffer"))
+                                         (list "--config" "-")))
                         (config (aichat--curl-make-config url type headers proxy data))
                         (program (car command))
                         (stdout (generate-new-buffer (concat "*" program "-stdout*")))
@@ -1076,7 +1079,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
                                    (kill-buffer stderr)
                                    (kill-buffer stderr-pipe-name))))
 
-                   (aichat-debug "curl config: \n%s" config)
+                   (aichat-debug "cur command: %s, config: \n%s" command config)
                    (with-current-buffer stdout
                      (setq-local aichat--curl-stderr stderr)
                      (setq-local aichat--curl-cleanup cleanup)
