@@ -170,6 +170,24 @@ Timeout:
   (aichat-http-get-with-proxy-with-backend 'curl)
   (aichat-http-get-with-proxy-with-backend 'url))
 
+(defun aichat-http-get-with-cookie-with-backend (backend)
+  (url-cookie-store "test" "aichat-http-get-with-cookie" nil "httpbin.org" "/" t)
+  (seq-let (status headers body)
+      (promise-wait-value
+       (promise-wait 100
+         (aichat-http "https://httpbin.org/get"
+                      :backend 'curl
+                      :params '(("hello". "world")))))
+    (should (string= "200" (car status)))
+    (let ((body-object (json-read-from-string body)))
+      (should (equal (alist-get 'args body-object) '((hello ."world"))))
+      (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent))
+      (should-not (string-empty-p (alist-get 'Cookie (alist-get 'headers body-object)))))))
+
+(ert-deftest aichat-http-get-with-cookie ()
+  (aichat-http-get-with-cookie-with-backend 'curl)
+  (aichat-http-get-with-cookie-with-backend 'url))
+
 (defun aichat-http-post-with-backend (backend)
   (seq-let (status headers body)
       (promise-wait-value

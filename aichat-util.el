@@ -85,6 +85,13 @@
 (require 'rx)
 (require 'url)
 (require 'url-http)
+(require 'json)
+(require 'seq)
+
+(require 'async-await)
+
+;; setup url library, avoid set cookie failed
+(url-do-setup)
 
 ;;; Code:
 
@@ -123,6 +130,30 @@
     (with-current-buffer (get-buffer-create "*AICHAT-DEBUG*")
       (goto-char (point-max))
       (insert (apply #'format str args) "\n"))))
+
+(defun aichat-uuid ()
+  "Return string with random (version 4) UUID."
+  (let ((rnd (md5 (format "%s%s%s%s%s%s%s"
+			              (random)
+			              (time-convert nil 'list)
+			              (user-uid)
+			              (emacs-pid)
+			              (user-full-name)
+			              user-mail-address
+			              (recent-keys)))))
+    (format "%s-%s-4%s-%s%s-%s"
+	        (substring rnd 0 8)
+	        (substring rnd 8 12)
+	        (substring rnd 13 16)
+	        (format "%x"
+		            (logior
+		             #b10000000
+		             (logand
+		              #b10111111
+		              (string-to-number
+		               (substring rnd 16 18) 16))))
+	        (substring rnd 18 20)
+	        (substring rnd 20 32))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1072,9 +1103,17 @@ CALLBACK      (string)   callbacl to receive reported http data.
    (format "url = \"%s\"\n" url)
    (format "request = \"%s\"\n" (if type type "GET"))
    (format "user-agent = \"%s\"\n" aichat-user-agent)
+   (when-let* ((url-object (url-generic-parse-url url))
+               (host (url-host url-object))
+               (url-type (url-type url-object))
+               (filename (url-filename url-object))
+               (cookies (url-cookie-generate-header-lines host (if (string-empty-p filename) "/" filename) (equal "https" url-type))))
+     (unless (string-empty-p cookies)
+       (format "header = \"%s\"\n" (string-trim-right cookies))))
+
    (when headers
      (cl-loop for (key . value) in headers
-              concat (format "header = \"%s: %s\"\n" key value)))
+              concat (format "header = %s\n" (json-encode (concat key ": " value)))))
    (when proxy
      (format "proxy = http://%s\n" proxy))
    (when data
@@ -1094,7 +1133,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
     (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
                       (aichat--http-urlencode-alist params))))
   (promise-new (lambda (resolve reject)
-                 (let* ((command (append (list aichat-curl-program "--silent" "--show-error" "--include") 
+                 (let* ((command (append (list aichat-curl-program "--silent" "--show-error" "--include")
                                          (when callback
                                            (list "--no-buffer"))
                                          (list "--config" "-")))
