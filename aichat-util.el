@@ -104,6 +104,18 @@
           (const :tag "curl" curl)
           (const :tag "url" url)))
 
+;;;###autoload
+(defun aichat-toggle-debug ()
+  "Toggle debug mode."
+  (interactive)
+  (cond
+   (aichat-debug
+    (setq aichat-debug nil
+          url-debug nil))
+   (t
+    (setq aichat-debug t
+          url-debug t))))
+
 (defun aichat-debug (str &rest args)
   "Print debug message to *AICHAT-DEBUG* buffer when `aichat-debug' is set `t'"
   (when aichat-debug
