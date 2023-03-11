@@ -82,6 +82,7 @@
 ;;; Require
 (eval-when-compile (require 'cl-lib))
 
+(require 'rx)
 (require 'url)
 (require 'url-http)
 
@@ -122,6 +123,27 @@
     (with-current-buffer (get-buffer-create "*AICHAT-DEBUG*")
       (goto-char (point-max))
       (insert (apply #'format str args) "\n"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defconst aichat--http-response-status-line-regexp
+  (rx "HTTP/" (group (or "1.0" "1.1" "2")) " "
+      ;; Status code
+      (group (1+ digit)) " "
+      ;; Reason phrase
+      (optional (group (1+ (not (any "\r\n")))))
+      (or
+       ;; HTTP 1
+       "\r\n"
+       ;; HTTP 2
+       "\n"))
+  "Regular expression matching HTTP response status line.")
+
+(defconst aichat--http-end-of-headers-regexp
+  (rx (or "\r\n\r\n" "\n\n" "\r\n\n"))
+  "Regular expression matching the end of HTTP headers.
+This must work with both HTTP/1 (using CRLF) and HTTP/2 (using
+only LF).")
 
 (defun aichat--http-urlencode-alist (alist)
   "Hexify ALIST fields according to RFC3986."
@@ -1005,20 +1027,22 @@ CALLBACK      (string)   callbacl to receive reported http data.
         (goto-char aichat--curl-parser-point)
 
         (when (eq 'status aichat--curl-parser-state)
-          (while (re-search-forward "^HTTP/[1-9]\\.?[0-9]? \\([0-9]\\{3\\}\\) \\([a-zA-Z ]*\\)" nil t)
-            (setq-local aichat--curl-response-status (cons (match-string 1) (match-string 2)))
+          (while (re-search-forward aichat--http-response-status-line-regexp nil t)
+            (setq-local aichat--curl-response-status (cons (match-string 2) (match-string 3)))
             (when aichat--curl-response-callback
               (funcall aichat--curl-response-callback 'status aichat--curl-response-status))
             (setq-local aichat--curl-parser-state 'header)
             (setq-local aichat--curl-parser-point (point))))
 
         (when (eq 'header aichat--curl-parser-state)
-          (when (re-search-forward "^\r?\n" nil t)
-            (let ((bound (point)))
-              (goto-char aichat--curl-parser-point)
-              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)\r?" bound t)
-                (push (cons (match-string 1) (match-string 2))
-                      aichat--curl-response-headers))
+          (when (re-search-forward aichat--http-end-of-headers-regexp nil t)
+            (let* ((bound (point))
+                   (lines (split-string (buffer-substring aichat--curl-parser-point bound) "[\f\t\n\r\v]+")))
+              (mapc (lambda (line)
+                      (let ((kv (split-string line ": ")))
+                        (push (cons (car kv) (cadr kv))
+                              aichat--curl-response-headers)))
+                    lines)
               (when aichat--curl-response-callback
                 (funcall aichat--curl-response-callback 'headers aichat--curl-response-headers))
               (setq-local aichat--curl-parser-point bound)
@@ -1184,6 +1208,7 @@ DATA          (string)   data to be sent to the server
                                               (event-buffer . nil)
                                               (event-callback . ,callback))
                              :callback (lambda (status data)
+                                         (aichat-debug "status: %s, handle: %s, data: \n%s" status (alist-get 'handle-data-p aichat--http-callback-data) data)
                                          (when (alist-get 'handle-data-p aichat--http-callback-data)
                                            (pcase status
                                              ('status
