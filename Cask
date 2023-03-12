@@ -1,9 +1,9 @@
 (source gnu)
 (source melpa)
 
-(package "bingai" "1.0.0" "BingAI Chat in Emacs")
+(package "emacs-aichat" "0.0.1" "AI Chat in Emacs")
 
-(package-file "bingai.el")
+(package-file "aichat.el")
 
 (files "*.el")
 

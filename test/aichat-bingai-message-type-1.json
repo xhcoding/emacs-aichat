@@ -1,0 +1,117 @@
+{
+  "type": 1,
+  "target": "update",
+  "arguments": [
+    {
+      "messages": [
+        {
+          "text": "根据Bing翻译[^1^]，这句话的英文是：I want to travel.😊\n",
+          "author": "bot",
+          "createdAt": "2023-03-12T02:08:00.2809296+00:00",
+          "timestamp": "2023-03-12T02:08:00.2809296+00:00",
+          "messageId": "222164bb-c205-4aa9-811a-c203df7d94e3",
+          "offense": "Unknown",
+          "adaptiveCards": [
+            {
+              "type": "AdaptiveCard",
+              "version": "1.0",
+              "body": [
+                {
+                  "type": "TextBlock",
+                  "text": "[1]: https://bing.com/search?q=translate+%E6%88%91%E6%83%B3%E5%8E%BB%E6%97%85%E6%B8%B8+to+English \"\"\n[2]: https://translate.google.com.bd/?hl=en \"Google Translate\"\n[3]: https://translate.google.com/m \"Google Translate\"\n[4]: https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit \"\\\"I want to travel and relax a bit.\\\" - Duolingo\"\n\n根据Bing翻译[^1^][1]，这句话的英文是：I want to travel.😊\n",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "size": "small",
+                  "text": "Learn more: [1. bing.com](https://bing.com/search?q=translate+%E6%88%91%E6%83%B3%E5%8E%BB%E6%97%85%E6%B8%B8+to+English) [2. translate.google.com.bd](https://translate.google.com.bd/?hl=en) [3. translate.google.com](https://translate.google.com/m) [4. forum.duolingo.com](https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit)",
+                  "wrap": true
+                }
+              ]
+            }
+          ],
+          "sourceAttributions": [
+            {
+              "providerDisplayName": "",
+              "seeMoreUrl": "https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English",
+              "searchQuery": "translate 我想去旅游 to English"
+            },
+            {
+              "providerDisplayName": "Google Translate",
+              "seeMoreUrl": "https://translate.google.com.bd/?hl=en",
+              "searchQuery": "translate 我想去旅游 to English"
+            },
+            {
+              "providerDisplayName": "Google Translate",
+              "seeMoreUrl": "https://translate.google.com/m",
+              "searchQuery": "translate 我想去旅游 to English"
+            },
+            {
+              "providerDisplayName": "\"I want to travel and relax a bit.\" - Duolingo",
+              "seeMoreUrl": "https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit",
+              "searchQuery": "translate 我想去旅游 to English"
+            }
+          ],
+          "feedback": {
+            "tag": null,
+            "updatedOn": null,
+            "type": "None"
+          },
+          "contentOrigin": "DeepLeo",
+          "privacy": null,
+          "suggestedResponses": [
+            {
+              "text": "谢谢你。",
+              "author": "user",
+              "createdAt": "2023-03-12T02:08:04.2222136+00:00",
+              "timestamp": "2023-03-12T02:08:04.2222136+00:00",
+              "messageId": "dfd27bfd-e3a0-41b4-b7b5-fc267eb9978f",
+              "messageType": "Suggestion",
+              "offense": "Unknown",
+              "feedback": {
+                "tag": null,
+                "updatedOn": null,
+                "type": "None"
+              },
+              "contentOrigin": "DeepLeo",
+              "privacy": null
+            },
+            {
+              "text": "你会说中文吗？",
+              "author": "user",
+              "createdAt": "2023-03-12T02:08:04.2222158+00:00",
+              "timestamp": "2023-03-12T02:08:04.2222158+00:00",
+              "messageId": "4eccdcb4-952b-403b-ba6a-9d073091345a",
+              "messageType": "Suggestion",
+              "offense": "Unknown",
+              "feedback": {
+                "tag": null,
+                "updatedOn": null,
+                "type": "None"
+              },
+              "contentOrigin": "DeepLeo",
+              "privacy": null
+            },
+            {
+              "text": "你能教我一些英语吗？",
+              "author": "user",
+              "createdAt": "2023-03-12T02:08:04.222218+00:00",
+              "timestamp": "2023-03-12T02:08:04.222218+00:00",
+              "messageId": "6dcee439-140f-4303-902b-39c7358bb7f3",
+              "messageType": "Suggestion",
+              "offense": "Unknown",
+              "feedback": {
+                "tag": null,
+                "updatedOn": null,
+                "type": "None"
+              },
+              "contentOrigin": "DeepLeo",
+              "privacy": null
+            }
+          ]
+        }
+      ],
+      "requestId": "72a19064-e445-491d-97d1-bd03122e5537"
+    }
+  ]
+}

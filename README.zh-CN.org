@@ -1,0 +1,174 @@
+#+html: <p align="left">
+#+html:	<a href="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml"><img src="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml/badge.svg"/></a>
+#+html: </p>
+
+* AI Chat in Emacs
+
+在 Emacs 中使用 AI 聊天功能，目前包括 Bing Chat 和 OpenAI 的 ChatGpt 。
+
+* 安装
+
+** 依赖
+
+- [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] 用来和 Bing Chat 通信，如果你已经安装的这个插件，请更新到最新版本
+- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]] 
+
+** 安装
+
+克隆仓库到本地，并将路径加入到 =load-path= 中：
+
+#+begin_src sh
+  git clone https://github.com/xhcoding/emacs-aichat.git ~/.emacs.d/site-lisp/emacs-aichat
+#+end_src
+
+#+begin_src elisp
+  (add-to-list 'load-path "~/.emacs.d/site-lisp/emacs-aichat")
+#+end_src
+
+添加下面的代码到你的 emacs 启动文件中：
+
+#+begin_src elisp
+  (require 'aichat)
+#+end_src
+
+* 设置
+
+** Bing Chat
+
+*** 检查能否使用 Bing Chat
+
+- 安装最新版本的 Edge 浏览器
+- 打开 http://bing.com/chat ，在国内需要代理，不然会被重定向到必应中国
+- 如果能够使用聊天功能，说明可以使用 Bing Chat
+
+*** 登录
+
+emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在浏览器登录 http://www.bing.com 。
+
+有两种方式获取浏览器的 cookie ，你可以任选一种方便的方法。
+
+**** 方式一
+
+如果你有 Python 环境，运行 =pip3 install browser_cookie3= 安装 =browser_cookie3= ，
+然后打开终端，执行下面的代码：
+
+#+begin_src sh
+  python -c "import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires,c.domain, c.secure, c.path)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))"
+#+end_src
+
+如果你能够看到输出，并且输出中有 =_U= 字段，那么你能够用这种方式登录成功。
+
+**** 方式二
+
+- 安装 Edge 的 [[https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi][Cookie Editor]] 扩展
+- 打开 https://bing.com
+- 打开 Cookie Editor
+- 点击右下角的 "Export" ，成功后会把网站 cookie 保存到剪贴板
+- 将剪贴板内容粘贴到 cookies.json 中
+- 设置 =aichat-bingai-cookies-file= 的值为 cookies.json 文件的路径
+  
+** OpenAI
+
+*** 配置 AppKey
+
+emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的 appkey 写入
+=~/.authinfo= 文件里，格式如下：
+
+#+begin_src conf
+  machine platform.openai.com login aichat-openai password your-app-key
+#+end_src
+
+*** 配置代理 [可选]
+
+目前只测试过 http 代理，设置 =aichat-openai-proxy= 为代理地址，比如：
+
+#+begin_src elisp
+  (setq aichat-openai-proxy "localhost:51837")
+#+end_src
+
+* 使用
+
+** Bing Chat
+
+*** 命令
+
+- =aichat-bingai-chat= :  发送对话消息，加上 =C-u= 前缀会重新开始一个对话
+
+*** 选项
+
+- =aichat-bingai-cookies-file= : Bing cookies 文件路径
+- =aichat-bingai-conversation-style= : 对话风格，可选项为：=creative= , =balanced= 或 =precise= ，默认为 =balanced=
+- =aichat-bingai-chat-file= : 保存聊天记录的文件
+- =aichat-bingai-chat-display-function= ：显示聊天文件的函数
+
+*** API
+
+带 =stream= 后缀的以流的方式返回结果
+
+*** aichat-bingai-conversation 和 aichat-bingai-conversation-stream
+
+  例子：
+  
+  #+begin_src elisp
+    (aichat-bingai-conversation "请翻译：今天天气怎么样"
+                                :on-success (lambda (msg)
+                                              (message "结果: %s" (aichat-bingai-message-type-2-text msg)))
+                                :on-error (lambda (err)
+                                            (message "Error: %s" err)))
+  #+end_src
+  
+  #+begin_src elisp
+    (aichat-bingai-conversation-stream "请翻译：今天天气怎么样" 
+                                       (lambda (msg)
+                                         (message "Stream text: \n%s" (aichat-bingai-message-type-1-text msg)))
+                                       :on-success (lambda (_)
+                                                     (message "Finished"))
+                                       :on-error (lambda (err)
+                                                   (message "Error: %s" err)))
+  #+end_src
+
+
+** OpenAI
+
+*** 命令
+
+- =aichat-openai-translate-to-english= : 将选中区域翻译成英文
+
+*** 选项
+
+- =aichat-openai-proxy= : 设置请求 openai 的 http 代理
+- =aichat-openai-assistant-buffer= : OpenAI 助手信息的 buffer 名
+- =aichat-openai-assistant-display-function= ：显示 OpenAI 助手 Buffer 的函数
+
+*** API
+
+带 =stream= 后缀的以流的形式返回结果
+
+**** aichat-openai-chat-completions 和 aichat-openai-chat-completions-stream
+
+例子：
+
+#+begin_src elisp
+  (aichat-openai-chat-completions (aichat-openai-make-chat-messages
+                                      :user
+                                      (format
+                                       "Translate the following sentence into English:\n%s"
+                                       text))
+                                     :on-success (lambda (msg)
+                                                   (let ((content (aichat-openai-chat-completions-content msg)))
+                                                     (message "content: %s" content)))
+                                     :on-error (lambda (err)
+                                                 (message "error: %s"err)))
+#+end_src
+
+#+begin_src elisp
+  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user say)
+                                         (lambda (msg)
+                                           (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
+                                             (when delta-content
+                                               (message "delta-content: %s" delta-content))))
+                                         :on-success (lambda (_)
+                                                       (message "Finished"))
+                                         :on-error (lambda (err)
+                                                     (message "error: %s"err)))
+#+end_src

@@ -1,13 +1,13 @@
-;;; bingai-test.el --- bingai-test.el   -*- lexical-binding: t; -*-
+;;; aichat.el --- aichat.el   -*- lexical-binding: t; -*-
 
-;; Filename: bingai-test.el
-;; Description: bingai-test.el
+;; Filename: aichat.el
+;; Description: aichat.el
 ;; Author: xhcoding <xhcoding@foxmail.com>
 ;; Maintainer: xhcoding <xhcoding@foxmail.com>
 ;; Copyright (C) 2023, xhcoding, all rights reserved.
-;; Created: 2023-03-04 22:46:50
+;; Created: 2023-03-12 15:06:06
 ;; Version: 0.1
-;; Last-Updated: 2023-03-04 22:46:50
+;; Last-Updated: 2023-03-12 15:06:06
 ;;           By: xhcoding
 ;; URL: https://github.com/xhcoding/emacs-aichat
 ;; Keywords: 
@@ -39,19 +39,19 @@
 
 ;;; Commentary:
 ;;
-;; bingai-test.el
+;; aichat.el
 ;; 
 
 ;;; Installation:
 ;;
-;; Put bingai-test.el to your load-path.
+;; Put aichat.el to your load-path.
 ;; The load-path is usually ~/elisp/.
 ;; It's set in your ~/.emacs like this:
 ;; (add-to-list 'load-path (expand-file-name "~/elisp"))
 ;;
 ;; And the following to your ~/.emacs startup file.
 ;;
-;; (require 'bingai-test)
+;; (require 'aichat)
 ;;
 ;; No need more.
 
@@ -60,12 +60,12 @@
 ;; 
 ;;
 ;; All of the above can customize by:
-;;      M-x customize-group RET bingai-test RET
+;;      M-x customize-group RET aichat RET
 ;;
 
 ;;; Change log:
 ;;
-;; 2023/03/04
+;; 2023/03/12
 ;;      * First released.
 ;;
 
@@ -80,13 +80,19 @@
 ;;
 
 ;;; Require
-(require 'ert)
 
 ;;; Code:
 
-(ert-deftest aichat-ci ()
-  (should (= 1 1)))
+(defgroup aichat nil
+  "AI Chat in Emacs."
+  :group tools
+  :prefix "aichat-")
 
-(provide 'bingai-test)
+(require 'aichat-bingai)
 
-;;; bingai-test.el ends here
+(require 'aichat-openai)
+
+
+(provide 'aichat)
+
+;;; aichat.el ends here

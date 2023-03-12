@@ -1,0 +1,46 @@
+{
+  "type": 1,
+  "target": "update",
+  "arguments": [
+    {
+      "messages": [
+        {
+          "hiddenText": "```json\n{\"translation_results\":[{\"index\":\"1\",\"data\":{\"SourceLanguage\":\"zh-Hans\",\"TargetLanguage\":\"en\",\"TranslatedText\":\"i want to travel\",\"OriginalText\":\"我想去旅游\",\"InputTransliteration\":\"\",\"OutputTransliteration\":\"\",\"Title\":\"Bing Translator\",\"TranslationUrl\":\"http://www.bing.com/translator/?ref=TThis&text=我想去旅游&from=zh-Hans&to=en\",\"alternateTranslations\":[]},\"url\":\"https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English\"}],\"web_search_results\":[{\"index\":\"2\",\"title\":\"Google Translate\",\"snippets\":[\"Google's service, offered free of charge, instantly translates words, phrases, and web pages between English and over 100 other languages.\"],\"url\":\"https://translate.google.com.bd/?hl=en\"},{\"index\":\"3\",\"title\":\"Google Translate\",\"snippets\":[\"Translate. Detect language → English. Google home; Send feedback; Privacy and terms; Switch to full site\"],\"url\":\"https://translate.google.com/m\"},{\"index\":\"4\",\"title\":\"\\\"I want to travel and relax a bit.\\\" - Duolingo\",\"snippets\":[\"Further to my previous reply, please also note that there is a special punctuation mark used in Chinese in a sentence like this. Duolingo has used a comma, but normally you would use a 、 which is called 頓號〔顿号〕dùnhào which Pleco defines as a “slight-pause mark used to set off items in a series.”\"],\"url\":\"https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit\"}]}\n```",
+          "author": "bot",
+          "createdAt": "2023-03-12T02:07:54.9227195+00:00",
+          "timestamp": "2023-03-12T02:07:54.9227195+00:00",
+          "messageId": "1f3ed69b-5649-4e9b-a3be-d29a5eeaa704",
+          "messageType": "InternalSearchResult",
+          "offense": "None",
+          "adaptiveCards": [
+            {
+              "type": "AdaptiveCard",
+              "version": "1.0",
+              "body": [
+                {
+                  "type": "RichTextBlock",
+                  "inlines": [
+                    {
+                      "type": "TextRun",
+                      "isSubtle": true,
+                      "italic": true,
+                      "text": "```json\n{\"translation_results\":[{\"index\":\"1\",\"data\":{\"SourceLanguage\":\"zh-Hans\",\"TargetLanguage\":\"en\",\"TranslatedText\":\"i want to travel\",\"OriginalText\":\"我想去旅游\",\"InputTransliteration\":\"\",\"OutputTransliteration\":\"\",\"Title\":\"Bing Translator\",\"TranslationUrl\":\"http://www.bing.com/translator/?ref=TThis&text=我想去旅游&from=zh-Hans&to=en\",\"alternateTranslations\":[]},\"url\":\"https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English\"}],\"web_search_results\":[{\"index\":\"2\",\"title\":\"Google Translate\",\"snippets\":[\"Google's service, offered free of charge, instantly translates words, phrases, and web pages between English and over 100 other languages.\"],\"url\":\"https://translate.google.com.bd/?hl=en\"},{\"index\":\"3\",\"title\":\"Google Translate\",\"snippets\":[\"Translate. Detect language → English. Google home; Send feedback; Privacy and terms; Switch to full site\"],\"url\":\"https://translate.google.com/m\"},{\"index\":\"4\",\"title\":\"\\\"I want to travel and relax a bit.\\\" - Duolingo\",\"snippets\":[\"Further to my previous reply, please also note that there is a special punctuation mark used in Chinese in a sentence like this. Duolingo has used a comma, but normally you would use a 、 which is called 頓號〔顿号〕dùnhào which Pleco defines as a “slight-pause mark used to set off items in a series.”\"],\"url\":\"https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit\"}]}\n```"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "tag": null,
+            "updatedOn": null,
+            "type": "None"
+          },
+          "contentOrigin": "DeepLeo",
+          "privacy": null
+        }
+      ],
+      "requestId": "72a19064-e445-491d-97d1-bd03122e5537"
+    }
+  ]
+}

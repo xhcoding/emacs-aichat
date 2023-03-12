@@ -85,11 +85,16 @@
 
 ;;; Code:
 
+(defgroup aichat-openai nil
+  "OpenAI in Emacs."
+  :group 'aichat
+  :prefix "aichat-openai-")
+
 (defcustom aichat-openai-proxy nil
   "Http proxy of request openai api.
 
 (setq aichat-openai-proxy \"localhost:51837\")"
-  :group 'aichat
+  :group 'aichat-openai
   :type 'string)
 
 (defun aichat-openai-api-key ()
@@ -104,15 +109,15 @@
 
 (defconst aichat-openai--chat-completions-request-type "POST" "The request type of chat completions api.")
 
-(defconst aichat-openai--http-headers `(("Content-Type" . "application/json")
-                                        ("Authorization" . ,(format "Bearer %s" (aichat-openai-api-key))))
+(defvar aichat-openai--http-headers `(("Content-Type" . "application/json")
+                                      ("Authorization" . ,(format "Bearer %s" (aichat-openai-api-key))))
   "The default headers of openai request.")
 
-(cl-defun aichat-openai--make-chat-messages (&rest settings
-                                                   &key
-                                                   user
-                                                   system
-                                                   assistant)
+(cl-defun aichat-openai-make-chat-messages (&rest settings
+                                                  &key
+                                                  user
+                                                  system
+                                                  assistant)
   "Make chat completions messages.
 
 (aichat-openai--make-chat-messages
@@ -122,35 +127,24 @@
    (cl-loop for (key value) on settings by #'cddr
             collect (list :role (string-trim-left (symbol-name key) ":") :content value))))
 
-(cl-defun aichat-openai--chat-completions (messages &rest settings
-                                                    &key
-                                                    on-success
-                                                    on-error
-                                                    (temperature nil)
-                                                    (top-p nil)
-                                                    (n nil)
-                                                    (stop nil)
-                                                    (max-tokens nil)
-                                                    (presence-penalty nil)
-                                                    (frequency-penalty nil)
-                                                    (logit-bias nil)
-                                                    (user nil))
+(cl-defun aichat-openai-chat-completions (messages &rest settings
+                                                   &key
+                                                   on-success
+                                                   on-error
+                                                   &allow-other-keys
+                                                   )
   "Request openai chat completions api.
 
 Look https://platform.openai.com/docs/api-reference/chat."
-  (let ((data (json-encode (append
-                            (list
-                             :model aichat-openai--chat-completions-model
-                             :messages messages)
-                            (when temperature (list :temperature temperature))
-                            (when top-p (list :top_p top-p))
-                            (when n (list :n n))
-                            (when stop (list :stop stop))
-                            (when max-tokens (list :max_tokens max-tokens))
-                            (when presence-penalty (list :presence_penalty presence-penalty))
-                            (when frequency-penalty (list :frequency_penalty frequency-penalty))
-                            (when logit-bias (list :logit_bias logit-bias))
-                            (when user (list :user user))))))
+
+  (let* ((args (cl-loop for (key value) on settings by #'cddr
+                        append (unless (member key '(:on-success :on-error))
+                                 (list key value))))
+         (data (json-encode (append
+                             (list
+                              :model aichat-openai--chat-completions-model
+                              :messages messages)
+                             args))))
 
     (aichat-debug "Request %s with data:\n%s\n" aichat-openai--chat-completions-url data)
 
@@ -171,36 +165,24 @@ Look https://platform.openai.com/docs/api-reference/chat."
                     (when on-error
                       (funcall on-error err))))))
 
-(cl-defun aichat-openai--chat-completions-stream (messages callback &rest settings
-                                                           &key
-                                                           on-success
-                                                           on-error
-                                                           (temperature nil)
-                                                           (top-p nil)
-                                                           (n nil)
-                                                           (stop nil)
-                                                           (max-tokens nil)
-                                                           (presence-penalty nil)
-                                                           (frequency-penalty nil)
-                                                           (logit-bias nil)
-                                                           (user nil))
+(cl-defun aichat-openai-chat-completions-stream (messages callback &rest settings
+                                                          &key
+                                                          on-success
+                                                          on-error
+                                                          &allow-other-keys
+                                                          )
   "Request openai chat completions api with stream mode.
 
-Look https://platform.openai.com/docs/api-reference/chat."
-  (let ((data (json-encode (append
-                            (list
-                             :model aichat-openai--chat-completions-model
-                             :messages messages
-                             :stream t)
-                            (when temperature (list :temperature temperature))
-                            (when top-p (list :top_p top-p))
-                            (when n (list :n n))
-                            (when stop (list :stop stop))
-                            (when max-tokens (list :max_tokens max-tokens))
-                            (when presence-penalty (list :presence_penalty presence-penalty))
-                            (when frequency-penalty (list :frequency_penalty frequency-penalty))
-                            (when logit-bias (list :logit_bias logit-bias))
-                            (when user (list :user user))))))
+Look https://platform.openai.com/docs/api-reference/chat for more request params."
+  (let* ((args (cl-loop for (key value) on settings by #'cddr
+                        append (unless (member key '(:on-success :on-error))
+                                 (list key value))))
+         (data (json-encode (append
+                             (list
+                              :model aichat-openai--chat-completions-model
+                              :messages messages
+                              :stream t)
+                             args))))
 
     (aichat-debug "Request %s with data:\n%s\n" aichat-openai--chat-completions-url data)
 
@@ -227,11 +209,11 @@ Look https://platform.openai.com/docs/api-reference/chat."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun aichat-openai--chat-completions-content (msg)
+(defun aichat-openai-chat-completions-content (msg)
   "[choices][0][message][content]"
   (alist-get 'content (alist-get 'message (aref (alist-get 'choices msg) 0))))
 
-(defun aichat-openai--chat-completions-delta-content (msg)
+(defun aichat-openai-chat-completions-delta-content (msg)
   "[choices][0][delta][content]"
   (alist-get 'content (alist-get 'delta (aref (alist-get 'choices msg) 0))))
 
@@ -246,10 +228,10 @@ Look https://platform.openai.com/docs/api-reference/chat."
       (goto-char (point-max))
       (insert say)
       (insert "\n"))
-    (aichat-openai--chat-completions-stream
-     (aichat-openai--make-chat-messages :user say)
+    (aichat-openai-chat-completions-stream
+     (aichat-openai-make-chat-messages :user say)
      (lambda (msg)
-       (let ((delta-content (aichat-openai--chat-completions-delta-content msg)))
+       (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
          (when delta-content
            (with-current-buffer buf
              (goto-char (point-max))
@@ -270,7 +252,7 @@ Look https://platform.openai.com/docs/api-reference/chat."
   :group 'aichat
   :type 'symbol)
 
-(defun aichat-openai--get-assistant-buffer ()
+(defun aichat-openai-assistant-get-buffer ()
   (get-buffer-create aichat-openai-assistant-buffer))
 
 (defun aichat-openai-translate-to-english (text)
@@ -278,21 +260,21 @@ Look https://platform.openai.com/docs/api-reference/chat."
   (interactive (if (use-region-p)
                    (list (buffer-substring-no-properties (region-beginning) (region-end)))
                  (list (read-string "Text: "))))
-  (aichat-openai--chat-completions (aichat-openai--make-chat-messages
+  (aichat-openai-chat-completions (aichat-openai-make-chat-messages
                                     :user
-                                     (format
-                                      "Translate the following sentence into English:\n%s"
-                                      text))
-                                 :on-success (lambda (msg)
-                                               (let ((content (aichat-openai--chat-completions-content msg))
-                                                     (buffer (aichat-openai--get-assistant-buffer)))
-                                                 (with-current-buffer buffer
-                                                   (goto-char (point-max))
-                                                   (insert (decode-coding-string content 'utf-8))
-                                                   (insert "\n\n"))
-                                                 (funcall aichat-openai-assistant-display-function buffer)))
-                                 :on-error (lambda (err)
-                                             (message "error: %s"err))))
+                                    (format
+                                     "Translate the following sentence into English:\n%s"
+                                     text))
+                                   :on-success (lambda (msg)
+                                                 (let ((content (aichat-openai-chat-completions-content msg))
+                                                       (buffer (aichat-openai-assistant-get-buffer)))
+                                                   (with-current-buffer buffer
+                                                     (goto-char (point-max))
+                                                     (insert (decode-coding-string content 'utf-8))
+                                                     (insert "\n\n"))
+                                                   (funcall aichat-openai-assistant-display-function buffer)))
+                                   :on-error (lambda (err)
+                                               (message "error: %s"err))))
 
 (provide 'aichat-openai)
 

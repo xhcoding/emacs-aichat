@@ -1,26 +1,41 @@
-
 #+html: <p align="left">
 #+html:	<a href="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml"><img src="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml/badge.svg"/></a>
+#+html:    <a href ="https://github.com/xhcoding/emacs-aichat/README.zh-CN.org"><img src="https://img.shields.io/badge/-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-555555.svg?style=flat-square"/></a>
 #+html: </p>
 
-* BingAI Chat in Emacs
+* AI Chat in Emacs
 
-#+html: <p align="center"><img src="bingai-chat.gif" width=800 height=400/></p>
+Use AI chat features in Emacs, currently including Bing Chat and OpenAI’s ChatGpt.
 
-* Setup
+* Installation
 
 ** Requirements
 
-emacs packages: 
+- [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] To communicate with Bing Chat, if you have already installed this package, please update to the latest version.
+- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]] 
 
-- [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]]
-- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
 
-python packages [optional]:
+** Install
 
-- [[https://github.com/borisbabic/browser_cookie3][browser_cookies3]]  for get cookies
+Clone the repository to your local machine, and add the path to your =load-path= :
 
-A Microsoft Account with early access to http://bing.com/chat
+#+begin_src sh
+  git clone https://github.com/xhcoding/emacs-aichat.git ~/.emacs.d/site-lisp/emacs-aichat
+#+end_src
+
+#+begin_src elisp
+  (add-to-list 'load-path "~/.emacs.d/site-lisp/emacs-aichat")
+#+end_src
+
+add the following code to your emacs startup file:
+
+#+begin_src elisp
+  (require 'aichat)
+#+end_src
+
+* Setup
+
+** Bing Chat
 
 *** Check access (Required)
 
@@ -30,48 +45,134 @@ A Microsoft Account with early access to http://bing.com/chat
 
 *** Getting authentication (Required)
 
-**** Option one
-Open terminal and run the following code:
+emacs-aichat uses browser cookies to log in to Bing Chat, so you need to log in to http://www.bing.com first in your browser.
 
-#+begin_src shell
+There are two ways to get the browser's cookie, you can choose any convenient method.
+
+**** Option one
+
+If you have a Python environment, run =pip3 install browser_cookie3= to install =browser_cookie3=, then open the terminal and execute the following code:
+
+
+#+begin_src sh
   python -c "import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires,c.domain, c.secure, c.path)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))"
 #+end_src
 
-If you can get the output and the output includes =_U= field, you can auth successful.
+If you can see the output and there is a =_U= field in the output, then you can log in successfully with this method.
 
 **** Option two
+
 - Install the cookie editor extension for [[https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi][Edge]]
 - Go to bing.com
 - Open the extension
 - Click "Export" on the bottom right (This saves your cookies to clipboard)
 - Paste your cookies into a file cookies.json
-- Set =bingai-cookies-file= to your cookies.json path
+- Set =aichat-bingai-cookies-file= to your cookies.json path
 
-** Installation
 
-Put bingai.el to your load-path, The load-path is usually ~/elisp/
+** OpenAI
 
-It's set in your ~/.emacs like this:
+*** AppKey
 
-#+begin_src elisp
-(add-to-list 'load-path (expand-file-name "~/elisp"))
+emacs-aichat obtains AppKey through =auth-source-pick-first-password=, and writes your appkey into =~/.authinfo= file, with the following format:
+
+#+begin_src conf
+  machine platform.openai.com login aichat-openai password your-app-key
 #+end_src
 
-And the following to your ~/.emacs startup file.
+*** Proxy [Optional]
+
+Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, for example:
 
 #+begin_src elisp
-(require 'bingai)
+  (setq aichat-openai-proxy "localhost:51837")
 #+end_src
-
 
 * Usage
 
-- =M-x bingai-chat= : start a conversation
-- =C-u M-x bingai-chat= : restart a new conversation.
-- =M-x bingai-toggle-debug= : print io in =*BINGAI-DEBUG*= buffer.
+** Bing Chat
 
-* Options
+*** Commands
 
-- =bingai-chat-file= : File path of save chat message.
-- =bingai-chat-display-function= : The function of how to display =bingai-chat-file= buffer.
-- =bingai-conversation-style= : Conversation style:  =creative= , =balanced= and =precise= .
+- =aichat-bingai-chat= : Send a conversation message, adding =C-u= prefix will start a new conversation
+
+*** Options
+
+- =aichat-bingai-cookies-file= : The path of cookies file.
+- =aichat-bingai-conversation-style= : Conversation style, optional values are: =creative= , =balanced= or =precise= , default is =balanced=
+- =aichat-bingai-chat-file= : a file that saves chat history
+- =aichat-bingai-chat-display-function= : a function that displays chat files
+
+*** API
+
+Results are returned as a stream with a =stream= suffix
+
+*** aichat-bingai-conversation and aichat-bingai-conversation-stream
+
+
+Examples: 
+  
+  #+begin_src elisp
+    (aichat-bingai-conversation "Hello"
+                                :on-success (lambda (msg)
+                                              (message "result: %s" (aichat-bingai-message-type-2-text msg)))
+                                :on-error (lambda (err)
+                                            (message "Error: %s" err)))
+  #+end_src
+  
+  #+begin_src elisp
+    (aichat-bingai-conversation-stream "Hello" 
+                                       (lambda (msg)
+                                         (message "Stream text: \n%s" (aichat-bingai-message-type-1-text msg)))
+                                       :on-success (lambda (_)
+                                                     (message "Finished"))
+                                       :on-error (lambda (err)
+                                                   (message "Error: %s" err)))
+  #+end_src
+
+
+** OpenAI
+
+*** Commands
+
+- =aichat-openai-translate-to-english= : translate the selected region into English
+
+*** Options
+
+- =aichat-openai-proxy= : set up an HTTP proxy that requests OpenAI
+- =aichat-openai-assistant-buffer= : the buffer name of the OpenAI Assistant result
+- =aichat-openai-assistant-display-function= : the function of display assistant buffer
+
+*** API
+
+Results are returned as a stream with a =stream= suffix
+
+
+**** aichat-openai-chat-completions and aichat-openai-chat-completions-stream
+
+Examples:
+
+#+begin_src elisp
+  (aichat-openai-chat-completions (aichat-openai-make-chat-messages
+                                      :user
+                                      (format
+                                       "Translate the following sentence into English:\n%s"
+                                       text))
+                                     :on-success (lambda (msg)
+                                                   (let ((content (aichat-openai-chat-completions-content msg)))
+                                                     (message "content: %s" content)))
+                                     :on-error (lambda (err)
+                                                 (message "error: %s"err)))
+#+end_src
+
+#+begin_src elisp
+  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user say)
+                                         (lambda (msg)
+                                           (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
+                                             (when delta-content
+                                               (message "delta-content: %s" delta-content))))
+                                         :on-success (lambda (_)
+                                                       (message "Finished"))
+                                         :on-error (lambda (err)
+                                                     (message "error: %s"err)))
+#+end_src
