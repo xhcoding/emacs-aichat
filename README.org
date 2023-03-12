@@ -1,6 +1,6 @@
 #+html: <p align="left">
 #+html:	<a href="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml"><img src="https://github.com/xhcoding/emacs-aichat/actions/workflows/test.yml/badge.svg"/></a>
-#+html:    <a href ="https://github.com/xhcoding/emacs-aichat/README.zh-CN.org"><img src="https://img.shields.io/badge/-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-555555.svg?style=flat-square"/></a>
+#+html:    <a href ="https://github.com/xhcoding/emacs-aichat/README.zh-CN.org"><img src="https://img.shields.io/badge/README-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-555555.svg"/></a>
 #+html: </p>
 
 * AI Chat in Emacs

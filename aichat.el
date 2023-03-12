@@ -85,7 +85,7 @@
 
 (defgroup aichat nil
   "AI Chat in Emacs."
-  :group tools
+  :group 'tools
   :prefix "aichat-")
 
 (require 'aichat-bingai)
