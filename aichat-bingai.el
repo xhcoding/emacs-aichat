@@ -556,7 +556,6 @@ all types in `aichat-bingai--allowed-message-types'."
                                                (when callback
                                                  (funcall callback message))))
                 (lambda (result)
-                  (message "xxxxxxxx: on success: %s" on-success)
                   (when on-success
                     (funcall on-success result)))
                 (lambda (err)
@@ -725,7 +724,6 @@ NEW-P is t, which means it is a new conversation."
       (replace-match "#+begin_src \\5#+end_src"))))
 
 (defun aichat-bingai--chat-handle-reply-finished (chat)
-  (message "handle reply finished")
   (condition-case error
       (with-current-buffer (aichat-bingai--chat-buffer chat)
         (save-mark-and-excursion
