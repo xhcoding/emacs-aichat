@@ -11,7 +11,7 @@
 ** 依赖
 
 - [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] 用来和 Bing Chat 通信，如果你已经安装的这个插件，请更新到最新版本
-- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]] 
+- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
 
 ** 安装
 
@@ -66,7 +66,7 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
 - 点击右下角的 "Export" ，成功后会把网站 cookie 保存到剪贴板
 - 将剪贴板内容粘贴到 cookies.json 中
 - 设置 =aichat-bingai-cookies-file= 的值为 cookies.json 文件的路径
-  
+
 ** OpenAI
 
 *** 配置 AppKey
@@ -108,7 +108,7 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 *** aichat-bingai-conversation 和 aichat-bingai-conversation-stream
 
   例子：
-  
+
   #+begin_src elisp
     (aichat-bingai-conversation "请翻译：今天天气怎么样"
                                 :on-success (lambda (msg)
@@ -116,9 +116,9 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
                                 :on-error (lambda (err)
                                             (message "Error: %s" err)))
   #+end_src
-  
+
   #+begin_src elisp
-    (aichat-bingai-conversation-stream "请翻译：今天天气怎么样" 
+    (aichat-bingai-conversation-stream "请翻译：今天天气怎么样"
                                        (lambda (msg)
                                          (message "Stream text: \n%s" (aichat-bingai-message-type-1-text msg)))
                                        :on-success (lambda (_)
@@ -150,10 +150,7 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 
 #+begin_src elisp
   (aichat-openai-chat-completions (aichat-openai-make-chat-messages
-                                      :user
-                                      (format
-                                       "Translate the following sentence into English:\n%s"
-                                       text))
+                                      :user "你好")
                                      :on-success (lambda (msg)
                                                    (let ((content (aichat-openai-chat-completions-content msg)))
                                                      (message "content: %s" content)))
@@ -162,7 +159,8 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 #+end_src
 
 #+begin_src elisp
-  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user say)
+  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages
+                                          :user "你好")
                                          (lambda (msg)
                                            (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
                                              (when delta-content

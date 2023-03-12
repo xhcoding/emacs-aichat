@@ -270,7 +270,7 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                                                        (buffer (aichat-openai-assistant-get-buffer)))
                                                    (with-current-buffer buffer
                                                      (goto-char (point-max))
-                                                     (insert (decode-coding-string content 'utf-8))
+                                                     (insert content)
                                                      (insert "\n\n"))
                                                    (funcall aichat-openai-assistant-display-function buffer)))
                                    :on-error (lambda (err)

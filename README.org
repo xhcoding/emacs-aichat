@@ -154,10 +154,7 @@ Examples:
 
 #+begin_src elisp
   (aichat-openai-chat-completions (aichat-openai-make-chat-messages
-                                      :user
-                                      (format
-                                       "Translate the following sentence into English:\n%s"
-                                       text))
+                                      :user "Hello")
                                      :on-success (lambda (msg)
                                                    (let ((content (aichat-openai-chat-completions-content msg)))
                                                      (message "content: %s" content)))
@@ -166,7 +163,7 @@ Examples:
 #+end_src
 
 #+begin_src elisp
-  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user say)
+  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user "Hello")
                                          (lambda (msg)
                                            (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
                                              (when delta-content
@@ -176,3 +173,4 @@ Examples:
                                          :on-error (lambda (err)
                                                      (message "error: %s"err)))
 #+end_src
+
