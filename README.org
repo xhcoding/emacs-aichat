@@ -174,3 +174,7 @@ Examples:
                                                      (message "error: %s"err)))
 #+end_src
 
+* Debug
+
+Open the debug mode with the command =aichat-toggle-debug=, and once it is open, you can see all network communications in =*AICHAT-DEBUG*= buffer.
+

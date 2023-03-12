@@ -119,10 +119,14 @@
   (cond
    (aichat-debug
     (setq aichat-debug nil
-          url-debug nil))
+          url-debug nil
+          websocket-debug nil)
+    (message "Turn off aichat debug mode."))
    (t
     (setq aichat-debug t
-          url-debug t))))
+          url-debug t
+          websocket-debug t)
+    (message "Turn on aichat tdebug mode"))))
 
 (defun aichat-debug (str &rest args)
   "Print debug message to *AICHAT-DEBUG* buffer when `aichat-debug' is set `t'"
