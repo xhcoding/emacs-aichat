@@ -305,18 +305,30 @@ Call `user-cb' when a message arrives."
           (setq object (json-read-from-string (substring buffer start-pos match-pos)))
           (aichat-debug "object:\n%s" object)
           (pcase (alist-get 'type object)
-            (1 (let ((user-cb (aichat-bingai--session-user-cb session)))
-                 (when user-cb
-                   (condition-case error
-                       (funcall user-cb object)
-                     (error
-                      (setf (aichat-bingai--session-replying session) nil)
-                      (websocket-close (aichat-bingai--session-chathub session))
-                      (funcall (aichat-bingai--session-reject session) (format "User callback error: %s\n" error)))))))
+            (1 (let ((user-cb (aichat-bingai--session-user-cb session))
+                     (message-type (alist-get 'messageType
+                                              (aref
+                                               (alist-get 'messages
+                                                          (aref (alist-get 'arguments message) 0))
+                                               0))))
+                 (if (string= message-type "Disengaged")
+                     (progn
+                       (setf (aichat-bingai--session-replying session) nil)
+                       (funcall (aichat-bingai--session-reject session) "Conversation disengaged, please reset conversation." ))
+                   (when user-cb
+                     (condition-case error
+                         (funcall user-cb object)
+                       (error
+                        (setf (aichat-bingai--session-replying session) nil)
+                        (websocket-close (aichat-bingai--session-chathub session))
+                        (funcall (aichat-bingai--session-reject session) (format "User callback error: %s\n" error))))))))
             (2 (setf (aichat-bingai--session-result session) object))
-            (3 (let ((result (aichat-bingai--session-result session)))
-                 (setf (aichat-bingai--session-replying session) nil)   
-                 (funcall (aichat-bingai--session-resolve session) result))))
+            (3 (let ((result (aichat-bingai--session-result session))
+                     (err (alist-get 'error object)))
+                 (setf (aichat-bingai--session-replying session) nil)
+                 (if err
+                     (funcall (aichat-bingai--session-reject session) err)
+                   (funcall (aichat-bingai--session-resolve session) result)))))
           (setq start-pos (1+ match-pos)))))
     (setf (aichat-bingai--session-buffer session) (substring buffer start-pos))))
 
@@ -386,7 +398,6 @@ Call resolve when the handshake with chathub passed."
    "Chat"
    "InternalSearchQuery"
    "InternalSearchResult"
-   "Disengaged"
    "InternalLoaderMessage"
    "RenderCardRequest"
    "AdsQuery"
@@ -405,14 +416,14 @@ Call resolve when the handshake with chathub passed."
 (defun aichat-bingai--make-request (session text style allowed-message-types)
   (unless allowed-message-types
     (setq allowed-message-types aichat-bingai--allowed-message-types))
-  
+
   (let* ((conversation (aichat-bingai--session-conversation session))
          (invocation-id (aichat-bingai--session-invocation-id session))
          (request (list :arguments
                         (vector
                          (list :source "cib"
                                :optionsSets (aichat-bingai--reply-options style)
-                               :allowedMessageTypes allowed-message-types
+                               :allowedMessageTypes (vconcat allowed-message-types "Disengaged")
                                :sliceIds aichat-binai--slice-ids
                                :isStartOfSession (if (= 0 invocation-id)
                                                      t
@@ -475,18 +486,18 @@ Call resolve when the handshake with chathub passed."
       (setq session (aichat-bingai--get-current-session)))
     (unless (aichat-bingai--session-chathub session)
       (await (aichat-bingai--create-chathub session)))
-    
-    (promise-new
-     (lambda (resolve reject)
-       (let ((request (aichat-bingai--make-request session text style allowed-message-types)))
-         (aichat-debug "Send request:\n%s\n" request)
-         (websocket-send-text (aichat-bingai--session-chathub session) request)
-         (setf (aichat-bingai--session-invocation-id session) (1+ (aichat-bingai--session-invocation-id session))
-               (aichat-bingai--session-replying session) t
-               (aichat-bingai--session-buffer session) ""
-               (aichat-bingai--session-resolve session) resolve
-               (aichat-bingai--session-reject session) reject
-               (aichat-bingai--session-user-cb session) callback))))))
+
+    (await (promise-new
+            (lambda (resolve reject)
+              (let ((request (aichat-bingai--make-request session text style allowed-message-types)))
+                (aichat-debug "Send request:\n%s\n" request)
+                (websocket-send-text (aichat-bingai--session-chathub session) request)
+                (setf (aichat-bingai--session-invocation-id session) (1+ (aichat-bingai--session-invocation-id session))
+                      (aichat-bingai--session-replying session) t
+                      (aichat-bingai--session-buffer session) ""
+                      (aichat-bingai--session-resolve session) resolve
+                      (aichat-bingai--session-reject session) reject
+                      (aichat-bingai--session-user-cb session) callback)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -513,7 +524,7 @@ Call resolve when the handshake with chathub passed."
   "Send a chat TEXT to Bing.
 
 `style' is the conversation style, look `aichat-bingai-conversation-stye' for detail.
-`allowed-message-types' is the message type allowed to return, 
+`allowed-message-types' is the message type allowed to return,
 all types in `aichat-bingai--allowed-message-types'."
   (when (aichat-bingai-conversationing-p)
     (error "Please wait for the conversation finished before call."))
@@ -521,7 +532,7 @@ all types in `aichat-bingai--allowed-message-types'."
     (setq style aichat-bingai-conversation-style))
   (unless allowed-message-types
     (setq allowed-message-types (vector "Chat")))
-  
+
   (promise-then (aichat-bingai--send-request text style allowed-message-types)
                 (lambda (result)
                   (when on-success
@@ -540,18 +551,18 @@ all types in `aichat-bingai--allowed-message-types'."
   "Send a chat TEXT to Bing.
 
 `style' is the conversation style, look `aichat-bingai-conversation-stye' for detail.
-`allowed-message-types' is the message type allowed to return, 
+`allowed-message-types' is the message type allowed to return,
 all types in `aichat-bingai--allowed-message-types'."
   (when (aichat-bingai-conversationing-p)
     (error "Please wait for the conversation finished before call."))
-  
+
   (unless style
     (setq style aichat-bingai-conversation-style))
-  
+
   (unless allowed-message-types
     (setq allowed-message-types (vector "Chat")))
-  
-  (promise-then (aichat-bingai--send-request text style allowed-message-types 
+
+  (promise-then (aichat-bingai--send-request text style allowed-message-types
                                              (lambda (message)
                                                (when callback
                                                  (funcall callback message))))
@@ -600,7 +611,7 @@ all types in `aichat-bingai--allowed-message-types'."
                   (when (and (string= msg-type "InternalSearchResult") (string= author "bot"))
                     (when-let* ((hidden-text (alist-get 'hiddenText msg))
                                 (hidden-object (ignore-errors (json-read-from-string (string-trim hidden-text "```json" "```")))))
-                      (cl-return 
+                      (cl-return
                        (cl-loop for result in hidden-object
                                 vconcat (cdr result)))))))))
 
@@ -737,7 +748,7 @@ NEW-P is t, which means it is a new conversation."
           (mapc (lambda (result)
                   (aichat-debug "Insert search result: %s"  result)
                   (let ((index (alist-get 'index result))
-                        (title (or (alist-get 'title result) 
+                        (title (or (alist-get 'title result)
                                    (alist-get 'Title (alist-get 'data result))))
                         (url (alist-get 'url result)))
                     (insert (format "%s. " index))
@@ -761,7 +772,7 @@ NEW-P is t, which means it is a new conversation."
   (when (and (car current-prefix-arg)
              (= (car current-prefix-arg) 4))
     (aichat-bingai-conversation-reset))
-  
+
   (if (aichat-bingai-conversationing-p)
       (message "Please wait for the conversation finished before saying.")
     (let* ((chat-buffer (aichat-bingai--chat-get-buffer))
@@ -771,9 +782,9 @@ NEW-P is t, which means it is a new conversation."
       (if (and aichat-bingai-chat-display-function (functionp aichat-bingai-chat-display-function))
           (funcall aichat-bingai-chat-display-function chat-buffer)
         (switch-to-buffer chat-buffer))
-      
+
       (aichat-bingai--chat-say chat (aichat-bingai-conversation-start-p))
-      
+
       (aichat-bingai-conversation-stream said (lambda (msg)
                                                 (aichat-bingai--chat-handle-reply msg chat))
                                          :allowed-message-types ["Chat"
