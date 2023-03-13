@@ -12,6 +12,7 @@
 
 - [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] 用来和 Bing Chat 通信，如果你已经安装的这个插件，请更新到最新版本
 - [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
+- [[https://github.com/jrblevin/markdown-mode][markdown-mode]]
 
 ** 安装
 

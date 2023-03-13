@@ -126,7 +126,7 @@
     (setq aichat-debug t
           url-debug t
           websocket-debug t)
-    (message "Turn on aichat tdebug mode"))))
+    (message "Turn on aichat debug mode"))))
 
 (defun aichat-debug (str &rest args)
   "Print debug message to *AICHAT-DEBUG* buffer when `aichat-debug' is set `t'"
@@ -158,6 +158,54 @@
 		               (substring rnd 16 18) 16))))
 	        (substring rnd 18 20)
 	        (substring rnd 20 32))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; JSON utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro aichat-json-serialize (params)
+  "Serialize object to json string."
+  (if (progn
+        (require 'json)
+        (fboundp 'json-serialize))
+      `(json-serialize ,params
+                       :null-object nil
+                       :false-object :json-false)
+    `(let ((json-false :json-false))
+       (json-encode ,params))))
+
+(defmacro aichat-json-parse (str)
+  "Parse json string STR."
+  (if (progn
+        (require 'json)
+        (fboundp 'json-parse-string))
+      `(json-parse-string ,str
+                          :object-type 'alist
+                          :null-object nil
+                          :false-object nil)
+    `(let ((json-array-type 'vector)
+           (json-object-type 'alist)
+           (json-false nil))
+       (json-read-from-string ,str))))
+
+(defun aichat-json-parse-file (file)
+  "Read the JSON object contained in FILE and return it."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (aichat-json-parse (buffer-string))))
+
+(defmacro aichat-json-access (object str)
+  "Access json element with {object}[array-index]."
+  (let ((res object)
+        (start-pos 0))
+    (cl-loop for index from 0 to (1- (length str))
+             do (let ((ch (aref str index)))
+                  (cond
+                   ((or (= ch 123) (= ch 91))
+                    (setq start-pos index))
+                   ((= ch 125)
+                    (setq res `(alist-get ',(intern (substring str (1+ start-pos) index)) ,res)))
+                   ((= ch 93)
+                    (setq res `(aref ,res ,(string-to-number (substring str (1+ start-pos) index))))))))
+    res))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1117,11 +1165,11 @@ CALLBACK      (string)   callbacl to receive reported http data.
 
    (when headers
      (cl-loop for (key . value) in headers
-              concat (format "header = %s\n" (json-encode (concat key ": " value)))))
+              concat (format "header = %s\n" (aichat-json-serialize (concat key ": " value)))))
    (when proxy
      (format "proxy = http://%s\n" proxy))
    (when data
-     (format "data = %s\n" (json-encode data)))))
+     (format "data = %s\n" (aichat-json-serialize data)))))
 
 (cl-defun aichat--curl-http (url &rest settings
                                  &key

@@ -139,6 +139,25 @@ Timeout:
       (aichat-debug msg)
       (should (not (get-buffer buffer-name))))))
 
+(defconst aichat-util-test-json-str "{\"user\":\"xhcoding\",\"age\":1000,\"others\":[\"hello\",1],\"keys\":{\"key\":\"value\"}}")
+
+(ert-deftest aichat-json-serialize ()
+  (should (string= "\"hel\\\"lo\"" (aichat-json-serialize "hel\"lo")))
+  (should (string= aichat-util-test-json-str
+                   (aichat-json-serialize (list :user "xhcoding" :age 1000 :others ["hello" 1] :keys (list :key "value"))))))
+
+(ert-deftest aichat-json-parse ()
+  (should (equal (aichat-json-parse aichat-util-test-json-str)
+                 '((user . "xhcoding") (age . 1000) (others . ["hello" 1]) (keys  (key . "value"))))))
+
+(ert-deftest aichat-json-access ()
+  (let ((object (aichat-json-parse aichat-util-test-json-str)))
+    (should (string= "xhcoding" (aichat-json-access object "{user}")))
+    (should (= 1000 (aichat-json-access object "{age}")))
+    (should (string= "hello" (aichat-json-access object "{others}[0]")))
+    (should (= 1 (aichat-json-access object "{others}[1]")))
+    (should (string= "value" (aichat-json-access object "{keys}{key}")))
+    (should (equal ["hello" 1] (aichat-json-access object "{others}")))))
 
 (defun aichat-http-get-with-backend (backend)
   (seq-let (status headers body)
@@ -148,9 +167,9 @@ Timeout:
                       :backend backend
                       :params '(("hello". "world")))))
     (should (string= "200" (car status)))
-    (let ((body-object (json-read-from-string body)))
-      (should (equal (alist-get 'args body-object) '((hello ."world"))))
-      (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))
+    (let ((body-object (aichat-json-parse body)))
+      (should (equal (aichat-json-access body-object "{args}") '((hello ."world"))))
+      (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent)))))
 
 (ert-deftest aichat-http-get ()
   (aichat-http-get-with-backend 'curl)
@@ -179,32 +198,33 @@ Timeout:
                       :backend 'curl
                       :params '(("hello". "world")))))
     (should (string= "200" (car status)))
-    (let ((body-object (json-read-from-string body)))
-      (should (equal (alist-get 'args body-object) '((hello ."world"))))
-      (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent))
-      (should-not (string-empty-p (alist-get 'Cookie (alist-get 'headers body-object)))))))
+    (let ((body-object (aichat-json-parse body)))
+      (should (equal (aichat-json-access body-object "{args}") '((hello ."world"))))
+      (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent))
+      (should-not (string-empty-p (aichat-json-access body-object "{headers}{Cookie}"))))))
 
 (ert-deftest aichat-http-get-with-cookie ()
   (aichat-http-get-with-cookie-with-backend 'curl)
   (aichat-http-get-with-cookie-with-backend 'url))
 
 (defun aichat-http-post-with-backend (backend)
-  (seq-let (status headers body)
-      (promise-wait-value
-       (promise-wait 100
-         (aichat-http "https://httpbin.org/post"
-                      :backend backend
-                      :type "POST"
-                      :headers '(("Content-Type" . "application/json")
-                                 ("Authorization" . "Bearer sk-qZbRi"))
-                      :data (json-encode (list :model "gpt-3.5-turbo"
-                                               :stream t
-                                               :messages (vector
-                                                          (list :role "user"
-                                                                :content "Hello, 我是你的助理" )))))))
-    (should (string= "200" (car status)))
-    (let ((body-object (json-read-from-string body)))
-      (should (string= (alist-get 'User-Agent (alist-get 'headers body-object)) aichat-user-agent)))))
+  (let ((data (aichat-json-serialize (list :model "gpt-3.5-turbo"
+                                           :stream t
+                                           :messages (vector
+                                                      (list :role "user"
+                                                            :content "Hello, 我是你的助理" ))))))
+    (seq-let (status headers body)
+        (promise-wait-value
+         (promise-wait 100
+           (aichat-http "https://httpbin.org/post"
+                        :backend backend
+                        :type "POST"
+                        :headers '(("Content-Type" . "application/json")
+                                   ("Authorization" . "Bearer sk-qZbRi"))
+                        :data data)))
+      (should (string= "200" (car status)))
+      (let ((body-object (aichat-json-parse body)))
+        (should (string= data (aichat-json-access body-object "{data}")))))))
 
 (ert-deftest aichat-http-post ()
   (aichat-http-post-with-backend 'curl)

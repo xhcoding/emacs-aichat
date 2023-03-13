@@ -136,7 +136,7 @@ Returns stdout on success, otherwise returns nil."
 (defun aichat-bingai--get-cookies-from-file (filename)
   "Get `aichat-bingai--domain' cookies from FILENAME."
   (when (file-exists-p filename)
-    (let ((cookies (json-read-file filename)))
+    (let ((cookies (aichat-json-parse-file filename)))
       (mapcar (lambda (cookie)
                 (let ((name (alist-get 'name cookie))
                       (value (alist-get 'value cookie))
@@ -254,8 +254,8 @@ Re-fetching cookies from `aichat-bing--domain'"
     (aichat-debug "status:\n%s\nheaders:\n%s\nbody:\n%s\n" status headers body)
     (if (not (string= "200" (car status)))
         (error "Create conversation failed: %s" status)
-      (let* ((data (json-read-from-string body))
-             (result-value (alist-get 'value (alist-get 'result data))))
+      (let* ((data (aichat-json-parse body))
+             (result-value (aichat-json-access data "{result}{value}")))
         (if (not (string= "Success" result-value))
             (error "Create conversation failed: %s" body)
           (aichat-bingai--conversation-new
@@ -302,15 +302,11 @@ Call `user-cb' when a message arrives."
         (setq match-pos (string-match-p aichat-bingai--message-delimiter buffer start-pos))
         (if (not match-pos)
             (throw 'not-find match-pos)
-          (setq object (json-read-from-string (substring buffer start-pos match-pos)))
+          (setq object (aichat-json-parse (substring buffer start-pos match-pos)))
           (aichat-debug "object:\n%s" object)
           (pcase (alist-get 'type object)
             (1 (let ((user-cb (aichat-bingai--session-user-cb session))
-                     (message-type (alist-get 'messageType
-                                              (aref
-                                               (alist-get 'messages
-                                                          (aref (alist-get 'arguments object) 0))
-                                               0))))
+                     (message-type (aichat-json-access object "{arguments}[0]{messages}[0]{messageType}")))
                  (if (string= message-type "Disengaged")
                      (progn
                        (setf (aichat-bingai--session-replying session) nil)
@@ -322,9 +318,9 @@ Call `user-cb' when a message arrives."
                         (setf (aichat-bingai--session-replying session) nil)
                         (websocket-close (aichat-bingai--session-chathub session))
                         (funcall (aichat-bingai--session-reject session) (format "User callback error: %s\n" error))))))))
-            (2  (let* ((result (alist-get 'result (alist-get 'item object)))
-                       (value (alist-get 'value result))
-                       (message (alist-get 'message result)))
+            (2  (let* ((result (aichat-json-access object "{item}{result}"))
+                       (value (aichat-json-access result "{value}"))
+                       (message (aichat-json-access result "{message}")))
                   (if (string= "Success" value)
                       (setf (aichat-bingai--session-result session) object)
 
@@ -332,7 +328,7 @@ Call `user-cb' when a message arrives."
                     (websocket-close (aichat-bingai--session-chathub session))
                     (funcall (aichat-bingai--session-reject session) (format "%s:%s\n" value message)))))
             (3 (let ((result (aichat-bingai--session-result session))
-                     (err (alist-get 'error object)))
+                     (err (aichat-json-access object "{error}")))
                  (setf (aichat-bingai--session-replying session) nil)
                  (if err
                      (funcall (aichat-bingai--session-reject session) err)
@@ -355,7 +351,7 @@ Call resolve when the handshake with chathub passed."
                                 (aichat-debug "====== chathub opened ======")
                                 ;; send handshake
                                 (if (and ws (websocket-openp ws))
-                                    (websocket-send-text ws (concat (json-encode
+                                    (websocket-send-text ws (concat (aichat-json-serialize
                                                                      (list :protocol "json" :version 1))
                                                                     aichat-bingai--message-delimiter))
                                   (funcall reject "Chathub unexpected closed during handshake.")))
@@ -371,7 +367,7 @@ Call resolve when the handshake with chathub passed."
                                      (condition-case error
                                          (progn
                                            (aichat-debug "Receive handshake response: %s" text)
-                                           (json-read-from-string (car (split-string text aichat-bingai--message-delimiter)))
+                                           (aichat-json-parse (car (split-string text aichat-bingai--message-delimiter)))
                                            (setf (websocket-on-message ws)
                                                  (lambda (_ws frame)
                                                    (aichat-bingai--chathub-parse-message session (websocket-frame-text frame))))
@@ -446,7 +442,7 @@ Call resolve when the handshake with chathub passed."
                         :invocationId (number-to-string (aichat-bingai--session-invocation-id session))
                         :target "chat"
                         :type 4)))
-    (concat (json-encode request)  aichat-bingai--message-delimiter)))
+    (concat (aichat-json-serialize request)  aichat-bingai--message-delimiter)))
 
 (defvar aichat-bingai--current-session nil  ;; only one session
   "Bingai session.")
@@ -585,52 +581,40 @@ all types in `aichat-bingai--allowed-message-types'."
 
 (defun aichat-bingai-message-type-1-text (message)
   "message[arguments][0][messages][0][text]."
-  (alist-get 'text
-             (aref
-              (alist-get 'messages
-                         (aref (alist-get 'arguments message) 0))
-              0)))
+  (aichat-json-access message "{arguments}[0]{messages}[0]{text}"))
 
 (defun aichat-bingai-message-type-1-search-result (message)
   "message[arguments][0][messages][0][hiddenText]."
-  (when-let* ((hidden-text (alist-get 'hiddenText
-                                      (aref
-                                       (alist-get 'messages
-                                                  (aref (alist-get 'arguments message) 0))
-                                       0)))
-              (hidden-object (ignore-errors  (json-read-from-string (string-trim hidden-text "```json" "```")))))
+  (when-let* ((hidden-text (aichat-json-access message "{arguments}[0]{messages}[0]{hiddenText}"))
+              (hidden-object (ignore-errors  (aichat-json-parse (string-trim hidden-text "```json" "```")))))
     (cl-loop for result in hidden-object
              vconcat (cdr result))))
 
 (defun aichat-bingai-message-type-1-message-type (message)
   "msg[arguments][0][messages][0][messageType]."
-  (alist-get 'messageType
-             (aref
-              (alist-get 'messages
-                         (aref (alist-get 'arguments message) 0))
-              0)))
+  (aichat-json-access message "{arguments}[0]{messages}[0]{messageType}"))
 
 (defun aichat-bingai-message-type-2-search-result (message)
   "message[arguments][0][messages][?][hiddenText]."
-  (when-let ((messages (alist-get 'messages (aref (alist-get 'arguments message) 0))))
+  (when-let ((messages  (aichat-json-access message "{item}{messages}")))
     (cl-loop for msg across messages
-             do (let ((msg-type (alist-get 'messageType msg))
-                      (author (alist-get 'author msg)))
+             do (let ((msg-type (aichat-json-access msg "{messagetype}"))
+                      (author (aichat-json-access msg "{author}")))
                   (when (and (string= msg-type "InternalSearchResult") (string= author "bot"))
-                    (when-let* ((hidden-text (alist-get 'hiddenText msg))
-                                (hidden-object (ignore-errors (json-read-from-string (string-trim hidden-text "```json" "```")))))
+                    (when-let* ((hidden-text (aichat-json-access msg "{hiddenText}"))
+                                (hidden-object (ignore-errors (aichat-json-parse (string-trim hidden-text "```json" "```")))))
                       (cl-return
                        (cl-loop for result in hidden-object
                                 vconcat (cdr result)))))))))
 
 (defun aichat-bingai-message-type-2-text (message)
   "message[item][messages][?][text]."
-  (when-let ((messages (alist-get 'messages (alist-get 'item message))))
+  (when-let ((messages (aichat-json-access message "{item}{messages}")))
     (cl-loop for msg across messages
-             do (let ((msg-type (alist-get 'messageType msg))
-                      (author (alist-get 'author msg)))
+             do (let ((msg-type (aichat-json-access msg "{messagetype}"))
+                      (author (aichat-json-access msg "{author}")))
                   (when (and (not msg-type) (string= author "bot"))
-                    (cl-return (alist-get 'text msg)))))))
+                    (cl-return (aichat-json-access msg "{text}")))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -755,10 +739,10 @@ NEW-P is t, which means it is a new conversation."
           (insert "\n")
           (mapc (lambda (result)
                   (aichat-debug "Insert search result: %s"  result)
-                  (let ((index (alist-get 'index result))
-                        (title (or (alist-get 'title result)
-                                   (alist-get 'Title (alist-get 'data result))))
-                        (url (alist-get 'url result)))
+                  (let ((index (aichat-json-access result "{index}"))
+                        (title (or (aichat-json-access result "{title}")
+                                   (aichat-json-access result "{data}{Title}")))
+                        (url (aichat-json-access result "{url}")))
                     (insert (format "%s. " index))
                     (if (derived-mode-p 'org-mode)
                         (org-insert-link nil url title)

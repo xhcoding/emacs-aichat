@@ -13,7 +13,7 @@ Use AI chat features in Emacs, currently including Bing Chat and OpenAI’s Chat
 
 - [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] To communicate with Bing Chat, if you have already installed this package, please update to the latest version.
 - [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]] 
-
+- [[https://github.com/jrblevin/markdown-mode][markdown-mode]]
 
 ** Install
 
