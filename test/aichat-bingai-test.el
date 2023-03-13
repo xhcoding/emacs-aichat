@@ -89,13 +89,13 @@
 ;;; Code:
 
 (defun aichat-bingai-test-message-type-1 ()
-  (json-read-file (expand-file-name "test/aichat-bingai-message-type-1.json" (file-name-directory (locate-library "aichat-util")))))
+  (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-1.json" (file-name-directory (locate-library "aichat-util")))))
 
 (defun aichat-bingai-test-message-type-1-search-result ()
-  (json-read-file (expand-file-name "test/aichat-bingai-message-type-1-search-result.json" (file-name-directory (locate-library "aichat-util")))))
+  (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-1-search-result.json" (file-name-directory (locate-library "aichat-util")))))
 
 (defun aichat-bingai-test-message-type-2 ()
-  (json-read-file (expand-file-name "test/aichat-bingai-message-type-2.json" (file-name-directory (locate-library "aichat-util")))))
+  (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-2.json" (file-name-directory (locate-library "aichat-util")))))
 
 
 (ert-deftest aichat-bingai-message-type-1-text ()

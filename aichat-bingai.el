@@ -598,7 +598,7 @@ all types in `aichat-bingai--allowed-message-types'."
   "message[arguments][0][messages][?][hiddenText]."
   (when-let ((messages  (aichat-json-access message "{item}{messages}")))
     (cl-loop for msg across messages
-             do (let ((msg-type (aichat-json-access msg "{messagetype}"))
+             do (let ((msg-type (aichat-json-access msg "{messageType}"))
                       (author (aichat-json-access msg "{author}")))
                   (when (and (string= msg-type "InternalSearchResult") (string= author "bot"))
                     (when-let* ((hidden-text (aichat-json-access msg "{hiddenText}"))
@@ -611,7 +611,7 @@ all types in `aichat-bingai--allowed-message-types'."
   "message[item][messages][?][text]."
   (when-let ((messages (aichat-json-access message "{item}{messages}")))
     (cl-loop for msg across messages
-             do (let ((msg-type (aichat-json-access msg "{messagetype}"))
+             do (let ((msg-type (aichat-json-access msg "{messageType}"))
                       (author (aichat-json-access msg "{author}")))
                   (when (and (not msg-type) (string= author "bot"))
                     (cl-return (aichat-json-access msg "{text}")))))))
