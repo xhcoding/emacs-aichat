@@ -309,7 +309,7 @@ Call `user-cb' when a message arrives."
                      (message-type (alist-get 'messageType
                                               (aref
                                                (alist-get 'messages
-                                                          (aref (alist-get 'arguments message) 0))
+                                                          (aref (alist-get 'arguments object) 0))
                                                0))))
                  (if (string= message-type "Disengaged")
                      (progn
@@ -322,7 +322,15 @@ Call `user-cb' when a message arrives."
                         (setf (aichat-bingai--session-replying session) nil)
                         (websocket-close (aichat-bingai--session-chathub session))
                         (funcall (aichat-bingai--session-reject session) (format "User callback error: %s\n" error))))))))
-            (2 (setf (aichat-bingai--session-result session) object))
+            (2  (let* ((result (alist-get 'result (alist-get 'item object)))
+                       (value (alist-get 'value result))
+                       (message (alist-get 'message result)))
+                  (if (string= "Success" value)
+                      (setf (aichat-bingai--session-result session) object)
+
+                    (setf (aichat-bingai--session-replying session) nil)
+                    (websocket-close (aichat-bingai--session-chathub session))
+                    (funcall (aichat-bingai--session-reject session) (format "%s:%s\n" value message)))))
             (3 (let ((result (aichat-bingai--session-result session))
                      (err (alist-get 'error object)))
                  (setf (aichat-bingai--session-replying session) nil)
@@ -423,7 +431,7 @@ Call resolve when the handshake with chathub passed."
                         (vector
                          (list :source "cib"
                                :optionsSets (aichat-bingai--reply-options style)
-                               :allowedMessageTypes (vconcat allowed-message-types "Disengaged")
+                               :allowedMessageTypes (vconcat allowed-message-types ["Disengaged"])
                                :sliceIds aichat-binai--slice-ids
                                :isStartOfSession (if (= 0 invocation-id)
                                                      t
