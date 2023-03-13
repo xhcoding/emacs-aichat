@@ -33,6 +33,14 @@ add the following code to your emacs startup file:
   (require 'aichat)
 #+end_src
 
+Or load separately
+
+#+begin_src elisp
+  (require 'aichat-bingai)
+  ;; or
+  (require 'aichat-openai)
+#+end_src
+
 * Setup
 
 ** Bing Chat
@@ -95,6 +103,8 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
 *** Commands
 
 - =aichat-bingai-chat= : Send a conversation message, adding =C-u= prefix will start a new conversation
+- =aichat-bingai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-bingai-assistant-buffer=
+- =aichat-bingai-replace-or-insert= : Send the selected region or the input content, and replace the selected region or insert at the current position with the returned result
 
 *** Options
 
@@ -102,6 +112,9 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
 - =aichat-bingai-conversation-style= : Conversation style, optional values are: =creative= , =balanced= or =precise= , default is =balanced=
 - =aichat-bingai-chat-file= : a file that saves chat history
 - =aichat-bingai-chat-display-function= : a function that displays chat files
+- =aichat-bingai-assistant-buffer= : Display the buffer name of the content returned by =aichat-bingai-assistant=
+- =aichat-bingai-assistant-display-function= : The function to display =aichat-bingai-assistant-buffer=, default to =display-buffer=
+- =aichat-bingai-assistant-prompts= : The =prompts= of =aichat-bingai-assistant= used.
 
 *** API
 

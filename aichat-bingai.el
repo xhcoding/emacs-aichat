@@ -270,6 +270,7 @@ Re-fetching cookies from `aichat-bing--domain'"
 `conversation' represents the `aichat-bingai--conversation'.
 `chathub' represents the chathub websocket connection.
 `invocation-id' indicates the number of questions.
+when `reset' is `t', session will be reset.
 `replying' indicates whether the reply is in progress.
 `buffer' saves the reply message for parsing.
 `resolve' and `reject' are promise callback, call `resolve' when the reply ends
@@ -279,6 +280,7 @@ Call `user-cb' when a message arrives."
   conversation
   chathub
   (invocation-id 0)
+  (reset nil)
   (replying nil)
   (buffer "")
   resolve
@@ -310,7 +312,8 @@ Call `user-cb' when a message arrives."
                  (if (string= message-type "Disengaged")
                      (progn
                        (setf (aichat-bingai--session-replying session) nil)
-                       (funcall (aichat-bingai--session-reject session) "Conversation disengaged, please reset conversation." ))
+                       (setf (aichat-bingai--session-reset session) t)
+                       (funcall (aichat-bingai--session-reject session) "Conversation disengaged, please retry." ))
                    (when user-cb
                      (condition-case error
                          (funcall user-cb object)
@@ -478,7 +481,9 @@ Call resolve when the handshake with chathub passed."
 
 (defun aichat-bingai--ensure-conversation-valid ()
   (when-let* ((session (aichat-bingai--get-current-session))
-              (invocation-id (aichat-bingai--session-invocation-id session) ))
+              (invocation-id (aichat-bingai--session-invocation-id session)))
+    (when (aichat-bingai--session-reset session)
+      (aichat-bingai--stop-session))
     (when (> invocation-id 9)
       (aichat-bingai--stop-session))))
 
@@ -576,6 +581,30 @@ all types in `aichat-bingai--allowed-message-types'."
                 (lambda (err)
                   (when on-error
                     (funcall on-error err)))))
+
+(defun aichat-bingai-send-region-or-input (on-finished &optional prefix suffix)
+  "Send the region or input, you can add a PREFIX or SUFFIX.
+The result is processed in ON-FINISHED and only returns the response text.
+ON-FINISHED: (lambda (content current-buffer current-point region-beginning region-end))"
+  (let ((cur-buf (current-buffer))
+        (beg-pos)
+        (end-pos)
+        (cur-pos))
+    (if (use-region-p)
+        (setq text (buffer-substring-no-properties (region-beginning) (region-end))
+              beg-pos (region-beginning)
+              end-pos (region-end))
+      (setq text (read-string "Input text: ")))
+    (with-current-buffer cur-buf
+      (setq cur-pos (point)))
+    (unless (string-empty-p text)
+      (aichat-bingai-conversation (concat prefix text suffix)
+                                  :on-success (lambda (msg)
+                                                (let ((content (aichat-bingai-message-type-2-text msg)))
+                                                  (when on-finished
+                                                    (funcall on-finished content cur-buf cur-pos beg-pos end-pos))))
+                                  :on-error (lambda (err)
+                                              (message "Error: %s" err))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -787,6 +816,65 @@ NEW-P is t, which means it is a new conversation."
                                                        (aichat-bingai--chat-handle-reply-finished chat))
                                          :on-error (lambda (msg)
                                                      (aichat-bingai--chat-handle-reply-error chat msg))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Assistant ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom aichat-bingai-assistant-buffer "*Aichat-BingAI-Assistant*"
+  "The buffer of show assistant message."
+  :group 'aichat-bingai
+  :type 'string)
+
+(defcustom aichat-bingai-assistant-display-function 'display-buffer
+  "The function of display `aichat-bingai-assistant-buffer'."
+  :group 'aichat-bingai
+  :type 'symbol)
+
+(defcustom aichat-bingai-assistant-prompts
+  '((Chinese-Translator . ((prefix . "Please translate the following sentence, if the original text is Chinese, translate it into English, otherwise translate it into Chinese, only return the translated text: ")
+                           (suffix . ""))))
+
+  "Prompts for `aichat-bingai-assistant'.
+
+(name . ((prefix . prefix-str) (suffix . suffix-str))"
+  :group 'aichat-bingai
+  :type '(repeat list))
+
+(defun aichat-bingai-assistant-get-buffer ()
+  (get-buffer-create aichat-bingai-assistant-buffer))
+
+(defun aichat-bingai-assistant (name)
+  "Insert the selected region or input content into the prefix and suffix selected from `aichat-bingai-assistant',
+send it to Bing and display the returned result to `aichat-bingai-assistant-buffer'."
+  (interactive (list (completing-read "Prompt name: " aichat-bingai-assistant-prompts nil t)))
+  (let* ((prompt (alist-get (intern name) aichat-bingai-assistant-prompts))
+         (prefix (alist-get 'prefix prompt))
+         (suffix (alist-get 'suffix prompt)))
+    (aichat-bingai-send-region-or-input (lambda (content &rest _)
+                                          (let ((buffer (aichat-bingai-assistant-get-buffer)))
+                                            (with-current-buffer buffer
+                                              (goto-char (point-max))
+                                              (insert content)
+                                              (insert "\n\n"))
+                                            (funcall aichat-bingai-assistant-display-function buffer)))
+                                        prefix
+                                        suffix)))
+
+(defun aichat-bingai-replace-or-insert (name)
+  "Insert the selected region or input content into the prefix and suffix selected from `aichat-bingai-assistant', send it to Bing.
+Replace the selected region or insert at the current position with the returned result."
+  (interactive (list (completing-read "Prompt name: " aichat-bingai-assistant-prompts nil t)))
+  (let* ((prompt (alist-get (intern name) aichat-bingai-assistant-prompts))
+         (prefix (alist-get 'prefix prompt))
+         (suffix (alist-get 'suffix prompt)))
+    (aichat-bingai-send-region-or-input (lambda (content current-buffer current-point region-beg region-end)
+                                          (with-current-buffer current-buffer
+                                            (if (and region-beg region-end)
+                                                (replace-regexp ".*" content nil region-beg region-end)
+                                              (goto-char current-point)
+                                              (insert content))))
+                                        prefix
+                                        suffix)))
 
 (provide 'aichat-bingai)
 

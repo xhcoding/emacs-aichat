@@ -32,6 +32,14 @@
   (require 'aichat)
 #+end_src
 
+或者单独加载
+
+#+begin_src elisp
+  (require 'aichat-bingai)
+  ;; or
+  (require 'aichat-openai)
+#+end_src
+
 * 设置
 
 ** Bing Chat
@@ -94,6 +102,8 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 *** 命令
 
 - =aichat-bingai-chat= :  发送对话消息，加上 =C-u= 前缀会重新开始一个对话
+- =aichat-bingai-assistant= : 发送选中区域或者输入的内容，返回的结果显示在 =aichat-bingai-assistant-buffer= 定义的 Buffer 中
+- =aichat-bingai-replace-or-insert= : 发送选中区域或者输入的内容，将返回的结果替代选中区域或者插入当前位置。
 
 *** 选项
 
@@ -101,6 +111,9 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 - =aichat-bingai-conversation-style= : 对话风格，可选项为：=creative= , =balanced= 或 =precise= ，默认为 =balanced=
 - =aichat-bingai-chat-file= : 保存聊天记录的文件
 - =aichat-bingai-chat-display-function= ：显示聊天文件的函数
+- =aichat-bingai-assistant-buffer= : 显示 =aichat-bingai-assistant= 返回的内容的 Buffer 名称
+- =aichat-bingai-assistant-display-function= : 显示 =aichat-bingai-assistant-buffer= 的方式，默认为 =display-buffer=
+- =aichat-bingai-assistant-prompts= : =aichat-bingai-assistant= 用到的 =prompts=
 
 *** API
 
