@@ -1,0 +1,12 @@
+
+* Changelog
+
+** 1.0.0 - 2023-03-14
+
+🎉 Welcome to emacs-aichat v1.0.0 🎉
+
+This is the first release of emacs-aichat, a package that lets you chat with AI in Emacs. You can have fun conversations with AI, ask questions, get answers, and even generate creative content like poems, stories, code, and more.
+
+We hope you enjoy using emacs-aichat and have a great time chatting with AI. If you have any feedback or issues, please let me know on GitHub or Emacs China.
+
+Happy chatting! 😊

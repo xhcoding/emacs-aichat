@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package "emacs-aichat" "0.0.1" "AI Chat in Emacs")
+(package "emacs-aichat" "1.0.0" "AI Chat in Emacs")
 
 (package-file "aichat.el")
 
