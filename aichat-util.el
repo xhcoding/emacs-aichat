@@ -100,7 +100,7 @@
   :group 'aichat
   :type 'boolean)
 
-(defcustom aichat-user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.57"
+(defcustom aichat-user-agent "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 Edg/111.0.1661.41"
   "`aichat-user-agent' is used to set the value of User-Agent."
   :group 'aichat
   :type 'string)

@@ -214,26 +214,26 @@ Re-fetching cookies from `aichat-bing--domain'"
 (defconst aichat-bingai--create-conversation-url "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
   "The url of create conversation.")
 
-(defconst aichat-bingai--headers
-  `(("accept" . "application/json")
+(defconst aichat-bingai--conversation-headers
+  `(("authority" . "edgeservices.bing.com")
+    ("accept" . "application/json")
     ("accept-language" . "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-    ("sec-ch-ua" . "\"Chromium\";v=\"110\", \"Not A(Brand\";v=\"24\", \"Microsoft Edge\";v=\"110\"")
-    ("sec-ch-ua-arch" . "\"x86\"")
-    ("sec-ch-ua-bitness" . "\"64\"")
-    ("sec-ch-ua-full-version" . "\"110.0.1587.57\"")
-    ("sec-ch-ua-full-version-list" . "\"Chromium\";v=\"110.0.5481.178\", \"Not A(Brand\";v=\"24.0.0.0\", \"Microsoft Edge\";v=\"110.0.1587.57\"")
+    ("content-type" . "application/json")
+    ("referer" . "https://edgeservices.bing.com/edgesvc/chat")
+    ("sec-ch-ua" . "\"Microsoft Edge\"=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"")
     ("sec-ch-ua-mobile" . "?0")
-    ("sec-ch-ua-model" . "")
     ("sec-ch-ua-platform" . "\"Windows\"")
-    ("sec-ch-ua-platform-version" . "\"15.0.0\"")
     ("sec-fetch-dest" . "empty")
     ("sec-fetch-mode" . "cors")
     ("sec-fetch-site" . "same-origin")
     ("x-ms-client-request-id" . ,(aichat-uuid))
-    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32")
-    ("referer" . "https://www.bing.com/search?q=Bing+AI&showconv=1")
-    ("referrer-policy" . "origin-when-cross-origin"))
-  "The headers of sending request to www.bing.com.")
+    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32"))
+  "The headers of create conversation.")
+
+(defconst aichat-bingai--chathub-headers
+  `(("User-Agent" . ,aichat-user-agent)
+    ("Accept-Language" . "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"))
+  "The headers of create chathub.")
 
 (cl-defstruct (aichat-bingai--conversation
                (:constructor aichat-bingai--conversation-new)
@@ -250,7 +250,7 @@ Re-fetching cookies from `aichat-bing--domain'"
   (seq-let
       (status headers body)
       (await (aichat-http aichat-bingai--create-conversation-url
-                          :headers aichat-bingai--headers))
+                          :headers aichat-bingai--conversation-headers))
     (aichat-debug "status:\n%s\nheaders:\n%s\nbody:\n%s\n" status headers body)
     (if (not (string= "200" (car status)))
         (error "Create conversation failed: %s" status)
@@ -259,9 +259,9 @@ Re-fetching cookies from `aichat-bing--domain'"
         (if (not (string= "Success" result-value))
             (error "Create conversation failed: %s" body)
           (aichat-bingai--conversation-new
-           :id (alist-get 'conversationId data)
-           :signature (alist-get 'conversationSignature data)
-           :client-id (alist-get 'clientId data)))))))
+           :id (aichat-json-access data "{conversationId}")
+           :signature (aichat-json-access data "{conversationSignature}")
+           :client-id (aichat-json-access data "{clientId}")))))))
 
 (cl-defstruct (aichat-bingai--session
                (:constructor aichat-bingai--session-new)
@@ -349,7 +349,7 @@ Call resolve when the handshake with chathub passed."
   (promise-new
    (lambda (resolve reject)
      (websocket-open aichat-bingai--chathub-url
-                     :custom-header-alist aichat-bingai--headers
+                     :custom-header-alist aichat-bingai--chathub-headers
                      :on-open (lambda (ws)
                                 (aichat-debug "====== chathub opened ======")
                                 ;; send handshake
