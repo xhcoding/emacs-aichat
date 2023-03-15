@@ -88,6 +88,14 @@
 
 ;;; Code:
 
+(ert-deftest aichat-bingai--get-cookies-from-file()
+  (let ((cookies (aichat-bingai--get-cookies-from-file (expand-file-name "test/cookies.json" (file-name-directory (locate-library "aichat-util"))))))
+    (cl-loop for cookie in cookies
+             do (let ((name (car cookie))
+                      (value (cadr cookie)))
+                  (when (string= name "_U")
+                    (should (string= value "invalid, do not use this")))))))
+
 (defun aichat-bingai-test-message-type-1 ()
   (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-1.json" (file-name-directory (locate-library "aichat-util")))))
 
