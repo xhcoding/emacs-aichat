@@ -448,15 +448,15 @@ the callback to be triggered."
      (url-percentage (- nd url-http-end-of-headers)
 		             url-http-content-length)))
 
-  ;; add this line
-  (aichat--http-report-data)
-
   (if (> (- nd url-http-end-of-headers) url-http-content-length)
       (progn
 	    ;; Found the end of the document!  Wheee!
 	    (url-lazy-message "Reading... done.")
 	    (if (url-http-parse-headers)
-	        (url-http-activate-callback)))))
+            ;; add this line
+            (progn
+              (aichat--http-report-data)
+	          (url-http-activate-callback))))))
 
 (defun aichat--url-http-chunked-encoding-after-change-function (st nd length)
   "Function used when dealing with chunked encoding.
