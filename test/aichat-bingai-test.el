@@ -102,13 +102,21 @@
   (let ((message-type-1 (aichat-bingai-test-message-type-1)))
     (should (string= (aichat-bingai-message-type-1-text message-type-1) "根据Bing翻译[^1^]，这句话的英文是：I want to travel.😊\n"))))
 
-(ert-deftest aichat-bingai-message-type-1-text-search-result ()
+(ert-deftest aichat-bingai-message-type-1-search-result ()
   (let ((message (aichat-bingai-test-message-type-1-search-result)))
     (should (length= (aichat-bingai-message-type-1-search-result message) 4))))
+
+(ert-deftest aichat-bingai-message-type-1-suggestion ()
+  (let ((message (aichat-bingai-test-message-type-1)))
+    (should (length= (aichat-bingai-message-type-1-suggestion message) 3))))
 
 (ert-deftest aichat-bingai-message-type-2-text ()
   (let ((message-type-2 (aichat-bingai-test-message-type-2)))
     (should (string= (aichat-bingai-message-type-2-text message-type-2) "根据Bing翻译[^1^]，这句话的英文是：I want to travel.😊"))))
+
+(ert-deftest aichat-bingai-message-type-2-suggestion ()
+  (let ((message-type-2 (aichat-bingai-test-message-type-2)))
+    (should (length= (aichat-bingai-message-type-2-suggestion message-type-2) 3))))
 
 (provide 'aichat-bingai-test)
 ;;; aichat-bingai-test.el ends here

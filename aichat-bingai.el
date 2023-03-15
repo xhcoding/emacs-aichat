@@ -648,6 +648,21 @@ ON-FINISHED: (lambda (content current-buffer current-point region-beginning regi
   "msg[arguments][0][messages][0][messageType]."
   (aichat-json-access message "{arguments}[0]{messages}[0]{messageType}"))
 
+(defun aichat-bingai-message-type-1-suggestion (message)
+  "message[arguments][0][messages][0][suggestedResponses]."
+  (when-let ((suggested-responses (aichat-json-access message "{arguments}[0]{messages}[0]{suggestedResponses}")))
+    (cl-loop for suggested-response across suggested-responses
+             collect (aichat-json-access suggested-response "{text}"))))
+
+(defun aichat-bingai-message-type-2-text (message)
+  "message[item][messages][?][text]."
+  (when-let ((messages (aichat-json-access message "{item}{messages}")))
+    (cl-loop for msg across messages
+             do (let ((msg-type (aichat-json-access msg "{messageType}"))
+                      (author (aichat-json-access msg "{author}")))
+                  (when (and (not msg-type) (string= author "bot"))
+                    (cl-return (aichat-json-access msg "{text}")))))))
+
 (defun aichat-bingai-message-type-2-search-result (message)
   "message[arguments][0][messages][?][hiddenText]."
   (when-let ((messages  (aichat-json-access message "{item}{messages}")))
@@ -661,14 +676,17 @@ ON-FINISHED: (lambda (content current-buffer current-point region-beginning regi
                        (cl-loop for result in hidden-object
                                 vconcat (cdr result)))))))))
 
-(defun aichat-bingai-message-type-2-text (message)
+(defun aichat-bingai-message-type-2-suggestion (message)
   "message[item][messages][?][text]."
   (when-let ((messages (aichat-json-access message "{item}{messages}")))
     (cl-loop for msg across messages
              do (let ((msg-type (aichat-json-access msg "{messageType}"))
                       (author (aichat-json-access msg "{author}")))
                   (when (and (not msg-type) (string= author "bot"))
-                    (cl-return (aichat-json-access msg "{text}")))))))
+                    (cl-return
+                     (when-let ((suggested-responses (aichat-json-access msg "{suggestedResponses}")))
+                       (cl-loop for suggested-response across suggested-responses
+                                collect (aichat-json-access suggested-response "{text}")))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -685,7 +703,6 @@ ON-FINISHED: (lambda (content current-buffer current-point region-beginning regi
 (defface aichat-bingai-chat-prompt-face '((t (:height 0.8 :foreground "#006800")))
   "Face used for prompt overlay.")
 
-
 (cl-defstruct (aichat-bingai--chat
                (:constructor aichat-bingai--chat-new)
                (:copier nil))
@@ -700,6 +717,8 @@ ON-FINISHED: (lambda (content current-buffer current-point region-beginning regi
   (replied-length 0)
   reply-point
   search-results)
+
+(defvar aichat-bingai--chat-suggestion nil)
 
 (defun aichat-bingai--chat-get-buffer ()
   "Get chat buffer."
@@ -780,7 +799,10 @@ NEW-P is t, which means it is a new conversation."
     (when (match-string 5)
       (replace-match "#+begin_src \\5#+end_src"))))
 
-(defun aichat-bingai--chat-handle-reply-finished (chat)
+(defun aichat-bingai--chat-handle-reply-finished (chat msg)
+  ;; update suggestion
+  (setq aichat-bingai--chat-suggestion (aichat-bingai-message-type-2-suggestion msg))
+
   (condition-case error
       (with-current-buffer (aichat-bingai--chat-buffer chat)
         (save-mark-and-excursion
@@ -799,8 +821,8 @@ NEW-P is t, which means it is a new conversation."
                         (url (aichat-json-access result "{url}")))
                     (insert (format "%s. " index))
                     (if (derived-mode-p 'org-mode)
-                        (org-insert-link nil url title)
-                      (insert (format "[%s](%s)" title url)))
+                        (org-insert-link nil url (or title url))
+                      (insert (format "[%s](%s)" (or title url) url)))
                     (insert "\n")))
                 (aichat-bingai--chat-search-results chat))
           (insert "\n")))
@@ -814,7 +836,8 @@ NEW-P is t, which means it is a new conversation."
 
 ;;;###autoload
 (defun aichat-bingai-chat (said)
-  (interactive "sYou say: ")
+  "Chat with Bing AI."
+  (interactive (list (completing-read "You say: " aichat-bingai--chat-suggestion nil nil)))
   (when (and (car current-prefix-arg)
              (= (car current-prefix-arg) 4))
     (aichat-bingai-conversation-reset))
@@ -837,8 +860,8 @@ NEW-P is t, which means it is a new conversation."
                                                                  "InternalSearchQuery"
                                                                  "InternalSearchResult"
                                                                  "InternalLoaderMessage"]
-                                         :on-success (lambda (_)
-                                                       (aichat-bingai--chat-handle-reply-finished chat))
+                                         :on-success (lambda (msg)
+                                                       (aichat-bingai--chat-handle-reply-finished chat msg))
                                          :on-error (lambda (msg)
                                                      (aichat-bingai--chat-handle-reply-error chat msg))))))
 
