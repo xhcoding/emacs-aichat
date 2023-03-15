@@ -879,8 +879,8 @@ NEW-P is t, which means it is a new conversation."
   :type 'symbol)
 
 (defcustom aichat-bingai-assistant-prompts
-  '((Chinese-Translator . ((prefix . "Please translate the following sentence, if the original text is Chinese, translate it into English, otherwise translate it into Chinese, only return the translated text: ")
-                           (suffix . ""))))
+  '((Chinese-Translator . ((prefix . "Please translate the following sentence, if the original text is Chinese, translate it into English, otherwise translate it into Chinese, only return the translated text: ")))
+    (Language-Teacher . ((prefix . "请帮我优化下面一段话，并告诉我这样优化的原因: "))))
 
   "Prompts for `aichat-bingai-assistant'.
 
