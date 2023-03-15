@@ -185,6 +185,8 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
                                                      (message "error: %s"err)))
 #+end_src
 
-* 调试
+* 反馈问题
 
-使用 =aichat-toggle-debug= 命令打开调试模式，当打开调试模式后，你可以在 =*AICHAT-DEBUG*= buffer 看到所有的网络通信。
+要反馈你的问题，请按照以下步骤操作：
+1. 通过输入命令 =aichat-toggle-debug= 来打开调试模式。
+2. 当出现错误时，[[https://github.com/xhcoding/emacs-aichat/issues/new][提交一个问题]] 并附上 =*AICHAT-DEBUG*= 缓冲区的内容。

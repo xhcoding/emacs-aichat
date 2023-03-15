@@ -187,7 +187,10 @@ Examples:
                                                      (message "error: %s"err)))
 #+end_src
 
-* Debug
+* Feedback Issues
 
-Open the debug mode with the command =aichat-toggle-debug=, and once it is open, you can see all network communications in =*AICHAT-DEBUG*= buffer.
+To feedback your issue, please follow these steps:
+1. Open the debug mode by typing the command =aichat-toggle-debug=.
+2. [[https://github.com/xhcoding/emacs-aichat/issues/new][Submit an issue]] and attach the content of the =*AICHAT-DEBUG*= buffer when an error occurs.
+
 
