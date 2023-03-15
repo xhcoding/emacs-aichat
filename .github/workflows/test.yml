@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        emacs-version: [28.2]
+        emacs-version: [28.2, 27.2]
 
     steps:
       - name: setenv

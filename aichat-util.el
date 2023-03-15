@@ -165,7 +165,8 @@
   "Serialize object to json string."
   (if (progn
         (require 'json)
-        (fboundp 'json-serialize))
+        (fboundp 'json-serialize)
+        (> emacs-major-version 27))
       `(json-serialize ,params
                        :null-object nil
                        :false-object :json-false)

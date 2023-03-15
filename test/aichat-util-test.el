@@ -142,7 +142,8 @@ Timeout:
 (defconst aichat-util-test-json-str "{\"user\":\"xhcoding\",\"age\":1000,\"others\":[\"hello\",1],\"keys\":{\"key\":\"value\"}}")
 
 (ert-deftest aichat-json-serialize ()
-  (should (string= "\"hel\\\"lo\"" (aichat-json-serialize "hel\"lo")))
+  (let ((str "hel\"lo"))
+    (should (string= "\"hel\\\"lo\"" (aichat-json-serialize str))))
   (should (string= aichat-util-test-json-str
                    (aichat-json-serialize (list :user "xhcoding" :age 1000 :others ["hello" 1] :keys (list :key "value"))))))
 

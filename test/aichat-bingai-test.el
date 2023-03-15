@@ -112,11 +112,11 @@
 
 (ert-deftest aichat-bingai-message-type-1-search-result ()
   (let ((message (aichat-bingai-test-message-type-1-search-result)))
-    (should (length= (aichat-bingai-message-type-1-search-result message) 4))))
+    (should (= (length (aichat-bingai-message-type-1-search-result message)) 4))))
 
 (ert-deftest aichat-bingai-message-type-1-suggestion ()
   (let ((message (aichat-bingai-test-message-type-1)))
-    (should (length= (aichat-bingai-message-type-1-suggestion message) 3))))
+    (should (= (length (aichat-bingai-message-type-1-suggestion message)) 3))))
 
 (ert-deftest aichat-bingai-message-type-2-text ()
   (let ((message-type-2 (aichat-bingai-test-message-type-2)))
@@ -124,7 +124,7 @@
 
 (ert-deftest aichat-bingai-message-type-2-suggestion ()
   (let ((message-type-2 (aichat-bingai-test-message-type-2)))
-    (should (length= (aichat-bingai-message-type-2-suggestion message-type-2) 3))))
+    (should (= (length (aichat-bingai-message-type-2-suggestion message-type-2)) 3))))
 
 (provide 'aichat-bingai-test)
 ;;; aichat-bingai-test.el ends here
