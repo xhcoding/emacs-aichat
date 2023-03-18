@@ -327,7 +327,7 @@ Call `user-cb' when a message arrives."
                   (throttling
                    (setf (aichat-bingai--session-max-conversation session)
                          (aichat-json-access throttling "{maxNumUserMessagesInConversation}")))
-                  ((string= message-type "Disendaged")
+                  ((string= message-type "Disengaged")
                    (aichat-bingai--chathub-reply-finished session "Conversation disengaged, next conversation will be restarted." t))
                   (t
                    (when user-cb
@@ -878,51 +878,77 @@ NEW-P is t, which means it is a new conversation."
   :group 'aichat-bingai
   :type 'symbol)
 
-(defcustom aichat-bingai-assistant-prompts
-  '((Chinese-Translator . ((prefix . "Please translate the following sentence, if the original text is Chinese, translate it into English, otherwise translate it into Chinese, only return the translated text: ")))
-    (Language-Teacher . ((prefix . "请帮我优化下面一段话，并告诉我这样优化的原因: "))))
-
-  "Prompts for `aichat-bingai-assistant'.
-
-(name . ((prefix . prefix-str) (suffix . suffix-str))"
-  :group 'aichat-bingai
-  :type '(repeat list))
-
 (defun aichat-bingai-assistant-get-buffer ()
   (get-buffer-create aichat-bingai-assistant-buffer))
 
-(defun aichat-bingai-assistant (name)
-  "Insert the selected region or input content into the prefix and suffix selected from `aichat-bingai-assistant',
-send it to Bing and display the returned result to `aichat-bingai-assistant-buffer'."
-  (interactive (list (completing-read "Prompt name: " aichat-bingai-assistant-prompts nil t)))
-  (let* ((prompt (alist-get (intern name) aichat-bingai-assistant-prompts))
-         (prefix (alist-get 'prefix prompt))
-         (suffix (alist-get 'suffix prompt)))
-    (aichat-bingai-send-region-or-input (lambda (content &rest _)
-                                          (let ((buffer (aichat-bingai-assistant-get-buffer)))
-                                            (with-current-buffer buffer
-                                              (goto-char (point-max))
-                                              (insert content)
-                                              (insert "\n\n"))
-                                            (funcall aichat-bingai-assistant-display-function buffer)))
-                                        prefix
-                                        suffix)))
+(defun aichat-bingai-assistant (text)
+  "Send the region or input to Bing and display the returned result to `aichat-bingai-assistant-buffer'."
+  (interactive (list (aichat-read-region-or-input "Input text: ")))
+  (when (and text (not (string-empty-p text)))
+    (aichat-bingai-conversation text
+                                :on-success (lambda (msg)
+                                              (when-let ((content (aichat-bingai-message-type-2-text msg))
+                                                         (buffer (aichat-bingai-assistant-get-buffer)))
+                                                (with-current-buffer buffer
+                                                  (goto-char (point-max))
+                                                  (insert content)
+                                                  (insert "\n\n"))
+                                                (funcall aichat-bingai-assistant-display-function buffer)))
+                                :on-error (lambda (err)
+                                            (message "Error: %s" err)))))
 
-(defun aichat-bingai-replace-or-insert (name)
-  "Insert the selected region or input content into the prefix and suffix selected from `aichat-bingai-assistant', send it to Bing.
-Replace the selected region or insert at the current position with the returned result."
-  (interactive (list (completing-read "Prompt name: " aichat-bingai-assistant-prompts nil t)))
-  (let* ((prompt (alist-get (intern name) aichat-bingai-assistant-prompts))
-         (prefix (alist-get 'prefix prompt))
-         (suffix (alist-get 'suffix prompt)))
-    (aichat-bingai-send-region-or-input (lambda (content current-buffer current-point region-beg region-end)
-                                          (with-current-buffer current-buffer
-                                            (if (and region-beg region-end)
-                                                (replace-regexp ".*" content nil region-beg region-end)
-                                              (goto-char current-point)
-                                              (insert content))))
-                                        prefix
-                                        suffix)))
+(defun aichat-bingai-replace-or-insert (text)
+  "Send the region or input to Bing and replace the selected region or insert at the current position with the returned result."
+  (interactive (list (aichat-read-region-or-input "Input text: ")))
+  (when (and text (not (string-empty-p text)))
+    (let* ((cur-buf (current-buffer))
+           (cur-pos (with-current-buffer cur-buf (point)))
+           (reg-beg (when (use-region-p) (region-beginning)))
+           (reg-end (when (use-region-p) (region-end))))
+      (aichat-bingai-conversation text
+                                  :on-success (lambda (msg)
+                                                (when-let ((content (aichat-bingai-message-type-2-text msg)))
+                                                  (with-current-buffer cur-buf
+                                                    (if (and reg-beg reg-end)
+                                                        (replace-regexp ".*" content nil reg-beg reg-end)
+                                                      (goto-char cur-pos)
+                                                      (insert content)))))
+                                  :on-error (lambda (err)
+                                              (message "Error: %s" err))))))
+
+(cl-defmacro aichat-bingai-prompt-create (name &rest args
+                                               &key
+                                               (input-prompt "Input text: ")
+                                               (text-format "%s")
+                                               (chat nil)
+                                               (assistant nil)
+                                               (replace-or-insert nil))
+  "This macro will generate three functions: aichat-bingai-chat-name, aichat-bingai-assistant-name or aichat-bingai-replace-or-insert-name.
+
+INPUT-PROMPT: The prompt before the user input in minibuffer.
+TEXT-FORMAT: Formating string, %s is replaced by what the user input."
+  (let ((chat-func (intern (format "aichat-bingai-chat-%s" name)))
+        (assistant-func (intern (format "aichat-bingai-assistant-%s" name)))
+        (replace-func (intern (format "aichat-bingai-replace-or-insert-%s" name))))
+    `(progn
+       (when ,chat
+         (defun ,chat-func(text)
+           (interactive (list (aichat-read-region-or-input ,input-prompt)))
+           (when text
+             (let ((query (format ,text-format text)))
+               (aichat-bingai-chat query)))))
+       (when ,assistant
+         (defun ,assistant-func(text)
+           (interactive (list (aichat-read-region-or-input ,input-prompt)))
+           (when text
+             (let ((query (format ,text-format text)))
+               (aichat-bingai-assistant query)))))
+       (when ,replace-or-insert
+         (defun ,replace-func(text)
+           (interactive (list (aichat-read-region-or-input ,input-prompt)))
+           (when text
+             (let ((query (format ,text-format text)))
+               (aichat-bingai-replace-or-insert query))))))))
 
 (provide 'aichat-bingai)
 

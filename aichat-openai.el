@@ -255,16 +255,11 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
 (defun aichat-openai-assistant-get-buffer ()
   (get-buffer-create aichat-openai-assistant-buffer))
 
-(defun aichat-openai-translate-to-english (text)
-  "Translate the TEXT in the region or input to english."
-  (interactive (if (use-region-p)
-                   (list (buffer-substring-no-properties (region-beginning) (region-end)))
-                 (list (read-string "Text: "))))
+(defun aichat-openai-assistant (text)
+  "Send the region or input to Bing and display the returned result to `aichat-openai-assistant-buffer'."
+  (interactive (list (aichat-read-region-or-input "Input text: ")))
   (aichat-openai-chat-completions (aichat-openai-make-chat-messages
-                                   :user
-                                   (format
-                                    "Translate the following sentence into English:\n%s"
-                                    text))
+                                   :user text)
                                   :on-success (lambda (msg)
                                                 (let ((content (aichat-openai-chat-completions-content msg))
                                                       (buffer (aichat-openai-assistant-get-buffer)))

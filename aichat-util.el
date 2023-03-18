@@ -159,6 +159,15 @@
 	        (substring rnd 18 20)
 	        (substring rnd 20 32))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Basic Utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun aichat-read-region-or-input (input-prompt)
+  "Read string from region or input."
+  (if (use-region-p)
+      (buffer-substring (region-beginning) (region-end))
+    (read-string input-prompt)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; JSON utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro aichat-json-serialize (params)

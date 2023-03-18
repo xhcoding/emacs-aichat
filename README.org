@@ -41,9 +41,11 @@ Or load separately
   (require 'aichat-openai)
 #+end_src
 
-* Setup
+* Bing Chat
 
-** Bing Chat
+Below is information on setting up Bing AI. If you are interested in learning about using OpenAI, please scroll down to the OpenAI section.
+
+** Setup
 
 *** Check access (Required)
 
@@ -78,7 +80,43 @@ If you can see the output and there is a =_U= field in the output, then you can 
 - Set =aichat-bingai-cookies-file= to your cookies.json path
 
 
-** OpenAI
+
+** Usage
+
+*** Commands
+
+- =aichat-bingai-chat= : Send a conversation message, adding =C-u= prefix will start a new conversation
+- =aichat-bingai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-bingai-assistant-buffer=
+- =aichat-bingai-replace-or-insert= : Send the selected region or the input content, and replace the selected region or insert at the current position with the returned result
+
+*** Customized fixed questioning approach.
+
+Use =aichat-bingai-prompt-create= to create a fixed way of asking questions, such as:
+
+#+begin_src elisp
+  (aichat-bingai-prompt-create "translator"
+                               :input-prompt "Please translate: "
+                               :text-format "Please identify the language I am speaking. If it is Chinese, please translate it into English; if it is not Chinese, please translate it into Chinese. Your answer must only contain the translated content. The following is the sentence I want to translate:\n%s"
+                               :chat t
+                               :assistant t
+                               :replace-or-insert t)
+#+end_src
+
+The above configuration will generate three functions: =aichat-bingai-chat-translator=, =aichat-bingai-assistant-translator=, and =aichat-bingai-replace-or-insert-translator=, which have the same effect as the above three commands, but the content of the query will be in the format of =text-format=.
+
+
+*** Options
+
+- =aichat-bingai-cookies-file= : The path of cookies file.
+- =aichat-bingai-conversation-style= : Conversation style, optional values are: =creative= , =balanced= or =precise= , default is =balanced=
+- =aichat-bingai-chat-file= : a file that saves chat history
+- =aichat-bingai-chat-display-function= : a function that displays chat files
+- =aichat-bingai-assistant-buffer= : Display the buffer name of the content returned by =aichat-bingai-assistant=
+- =aichat-bingai-assistant-display-function= : The function to display =aichat-bingai-assistant-buffer=, default to =display-buffer=
+
+* OpenAI
+
+** Setup
 
 *** AppKey
 
@@ -96,96 +134,19 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
   (setq aichat-openai-proxy "localhost:51837")
 #+end_src
 
-* Usage
-
-** Bing Chat
-
-*** Commands
-
-- =aichat-bingai-chat= : Send a conversation message, adding =C-u= prefix will start a new conversation
-- =aichat-bingai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-bingai-assistant-buffer=
-- =aichat-bingai-replace-or-insert= : Send the selected region or the input content, and replace the selected region or insert at the current position with the returned result
-
-*** Options
-
-- =aichat-bingai-cookies-file= : The path of cookies file.
-- =aichat-bingai-conversation-style= : Conversation style, optional values are: =creative= , =balanced= or =precise= , default is =balanced=
-- =aichat-bingai-chat-file= : a file that saves chat history
-- =aichat-bingai-chat-display-function= : a function that displays chat files
-- =aichat-bingai-assistant-buffer= : Display the buffer name of the content returned by =aichat-bingai-assistant=
-- =aichat-bingai-assistant-display-function= : The function to display =aichat-bingai-assistant-buffer=, default to =display-buffer=
-- =aichat-bingai-assistant-prompts= : The =prompts= of =aichat-bingai-assistant= used.
-
-*** API
-
-Results are returned as a stream with a =stream= suffix
-
-*** aichat-bingai-conversation and aichat-bingai-conversation-stream
 
 
-Examples: 
-  
-  #+begin_src elisp
-    (aichat-bingai-conversation "Hello"
-                                :on-success (lambda (msg)
-                                              (message "result: %s" (aichat-bingai-message-type-2-text msg)))
-                                :on-error (lambda (err)
-                                            (message "Error: %s" err)))
-  #+end_src
-  
-  #+begin_src elisp
-    (aichat-bingai-conversation-stream "Hello" 
-                                       (lambda (msg)
-                                         (message "Stream text: \n%s" (aichat-bingai-message-type-1-text msg)))
-                                       :on-success (lambda (_)
-                                                     (message "Finished"))
-                                       :on-error (lambda (err)
-                                                   (message "Error: %s" err)))
-  #+end_src
-
-
-** OpenAI
+** Usage
 
 *** Commands
 
-- =aichat-openai-translate-to-english= : translate the selected region into English
+- =aichat-openai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-openai-assistant-buffer=
 
 *** Options
 
 - =aichat-openai-proxy= : set up an HTTP proxy that requests OpenAI
 - =aichat-openai-assistant-buffer= : the buffer name of the OpenAI Assistant result
 - =aichat-openai-assistant-display-function= : the function of display assistant buffer
-
-*** API
-
-Results are returned as a stream with a =stream= suffix
-
-
-**** aichat-openai-chat-completions and aichat-openai-chat-completions-stream
-
-Examples:
-
-#+begin_src elisp
-  (aichat-openai-chat-completions (aichat-openai-make-chat-messages
-                                      :user "Hello")
-                                     :on-success (lambda (msg)
-                                                   (let ((content (aichat-openai-chat-completions-content msg)))
-                                                     (message "content: %s" content)))
-                                     :on-error (lambda (err)
-                                                 (message "error: %s"err)))
-#+end_src
-
-#+begin_src elisp
-  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages :user "Hello")
-                                         (lambda (msg)
-                                           (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
-                                             (when delta-content
-                                               (message "delta-content: %s" delta-content))))
-                                         :on-success (lambda (_)
-                                                       (message "Finished"))
-                                         :on-error (lambda (err)
-                                                     (message "error: %s"err)))
-#+end_src
 
 * Feedback Issues
 

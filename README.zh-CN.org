@@ -40,9 +40,11 @@
   (require 'aichat-openai)
 #+end_src
 
-* 设置
+* Bing Chat
 
-** Bing Chat
+下面是关于使用 Bing Chat 配置，如果你想要了解关于 OpenAI 的使用，请向下移动到 OpenAI 章节
+
+** 设置
 
 *** 检查能否使用 Bing Chat
 
@@ -76,7 +78,42 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
 - 将剪贴板内容粘贴到 cookies.json 中
 - 设置 =aichat-bingai-cookies-file= 的值为 cookies.json 文件的路径
 
-** OpenAI
+
+** 使用
+
+*** 命令
+
+- =aichat-bingai-chat= :  发送对话消息，消息会保存在 =aichat-bingai-chat-file= 中，加上 =C-u= 前缀会重新开始一个对话
+- =aichat-bingai-assistant= : 发送选中区域或者输入的内容，返回的结果显示在 =aichat-bingai-assistant-buffer= 定义的 Buffer 中
+- =aichat-bingai-replace-or-insert= : 发送选中区域或者输入的内容，将返回的结果替代选中区域或者插入当前位置。
+
+*** 自定义固定提问方式
+
+使用 =aichat-bingai-prompt-create= 创建一个固定的提问方式，比如：
+
+#+begin_src elisp
+  (aichat-bingai-prompt-create "translator"
+                               :input-prompt "请翻译: "
+                               :text-format "请识别我说的语言，如果我说的语言是中文，请把它翻译成英文；如果我说的语言不是中文，请把它翻译成中文。你的返回内容必须是翻译后的文本，不能包括其它内容:\n%s"
+                               :chat t
+                               :assistant t
+                               :replace-or-insert t)
+#+end_src
+
+上面这个配置会生成三个函数：  =aichat-bingai-chat-translator= , =aichat-bingai-assistant-translator= , =aichat-bingai-replace-or-insert-translator= ，效果和上面三个命令一样，只是提问的内容会按照 =text-format= 的格式。 
+
+*** 选项
+
+- =aichat-bingai-cookies-file= : Bing cookies 文件路径
+- =aichat-bingai-conversation-style= : 对话风格，可选项为：=creative= , =balanced= 或 =precise= ，默认为 =balanced=
+- =aichat-bingai-chat-file= : 保存聊天记录的文件
+- =aichat-bingai-chat-display-function= ：显示聊天文件的函数
+- =aichat-bingai-assistant-buffer= : 显示 =aichat-bingai-assistant= 返回的内容的 Buffer 名称
+- =aichat-bingai-assistant-display-function= : 显示 =aichat-bingai-assistant-buffer= 的方式，默认为 =display-buffer=
+
+* OpenAI
+
+** 设置
 
 *** 配置 AppKey
 
@@ -95,95 +132,17 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
   (setq aichat-openai-proxy "localhost:51837")
 #+end_src
 
-* 使用
-
-** Bing Chat
+** 使用
 
 *** 命令
 
-- =aichat-bingai-chat= :  发送对话消息，加上 =C-u= 前缀会重新开始一个对话
-- =aichat-bingai-assistant= : 发送选中区域或者输入的内容，返回的结果显示在 =aichat-bingai-assistant-buffer= 定义的 Buffer 中
-- =aichat-bingai-replace-or-insert= : 发送选中区域或者输入的内容，将返回的结果替代选中区域或者插入当前位置。
-
-*** 选项
-
-- =aichat-bingai-cookies-file= : Bing cookies 文件路径
-- =aichat-bingai-conversation-style= : 对话风格，可选项为：=creative= , =balanced= 或 =precise= ，默认为 =balanced=
-- =aichat-bingai-chat-file= : 保存聊天记录的文件
-- =aichat-bingai-chat-display-function= ：显示聊天文件的函数
-- =aichat-bingai-assistant-buffer= : 显示 =aichat-bingai-assistant= 返回的内容的 Buffer 名称
-- =aichat-bingai-assistant-display-function= : 显示 =aichat-bingai-assistant-buffer= 的方式，默认为 =display-buffer=
-- =aichat-bingai-assistant-prompts= : =aichat-bingai-assistant= 用到的 =prompts=
-
-*** API
-
-带 =stream= 后缀的以流的方式返回结果
-
-*** aichat-bingai-conversation 和 aichat-bingai-conversation-stream
-
-  例子：
-
-  #+begin_src elisp
-    (aichat-bingai-conversation "请翻译：今天天气怎么样"
-                                :on-success (lambda (msg)
-                                              (message "结果: %s" (aichat-bingai-message-type-2-text msg)))
-                                :on-error (lambda (err)
-                                            (message "Error: %s" err)))
-  #+end_src
-
-  #+begin_src elisp
-    (aichat-bingai-conversation-stream "请翻译：今天天气怎么样"
-                                       (lambda (msg)
-                                         (message "Stream text: \n%s" (aichat-bingai-message-type-1-text msg)))
-                                       :on-success (lambda (_)
-                                                     (message "Finished"))
-                                       :on-error (lambda (err)
-                                                   (message "Error: %s" err)))
-  #+end_src
-
-
-** OpenAI
-
-*** 命令
-
-- =aichat-openai-translate-to-english= : 将选中区域翻译成英文
+- =aichat-openai-assistant= : 发送选中区域或输入内容，将结果显示在 =aichat-openai-assistant-buffer= 中
 
 *** 选项
 
 - =aichat-openai-proxy= : 设置请求 openai 的 http 代理
 - =aichat-openai-assistant-buffer= : OpenAI 助手信息的 buffer 名
 - =aichat-openai-assistant-display-function= ：显示 OpenAI 助手 Buffer 的函数
-
-*** API
-
-带 =stream= 后缀的以流的形式返回结果
-
-**** aichat-openai-chat-completions 和 aichat-openai-chat-completions-stream
-
-例子：
-
-#+begin_src elisp
-  (aichat-openai-chat-completions (aichat-openai-make-chat-messages
-                                      :user "你好")
-                                     :on-success (lambda (msg)
-                                                   (let ((content (aichat-openai-chat-completions-content msg)))
-                                                     (message "content: %s" content)))
-                                     :on-error (lambda (err)
-                                                 (message "error: %s"err)))
-#+end_src
-
-#+begin_src elisp
-  (aichat-openai-chat-completions-stream (aichat-openai-make-chat-messages
-                                          :user "你好")
-                                         (lambda (msg)
-                                           (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
-                                             (when delta-content
-                                               (message "delta-content: %s" delta-content))))
-                                         :on-success (lambda (_)
-                                                       (message "Finished"))
-                                         :on-error (lambda (err)
-                                                     (message "error: %s"err)))
-#+end_src
 
 * 反馈问题
 
