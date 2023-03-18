@@ -367,16 +367,21 @@ Call resolve when the handshake with chathub passed."
                                   (funcall reject "Chathub unexpected closed during handshake.")))
                      :on-close (lambda (_ws)
                                  (aichat-debug "====== chathub closed ======")
-                                 (setf (aichat-bingai--session-chathub session) nil)
-                                 (if (aichat-bingai--session-replying session)
-                                     (progn
-                                       ;; close when replying
-                                       (setf (aichat-bingai--session-replying session) nil)
-                                       (funcall (aichat-bingai--session-reject session) "Chathub closed unexpectedly during reply."))
-                                   (let ((err (aichat-bingai--session-err session)))
-                                     (if err
-                                         (funcall (aichat-bingai--session-reject session) err)
-                                       (funcall (aichat-bingai--session-resolve session) (aichat-bingai--session-result session))))))
+                                 (if (not (aichat-bingai--session-chathub session))
+                                     (funcall reject "Chathub unexpected closed during handshake.")
+                                   (setf (aichat-bingai--session-chathub session) nil)
+                                   (if (aichat-bingai--session-replying session)
+                                       (progn
+                                         ;; close when replying
+                                         (setf (aichat-bingai--session-replying session) nil)
+                                         (when-let ((reject-func (aichat-bingai--session-reject session)))
+                                           (funcall  reject-func "Chathub closed unexpectedly during reply.")))
+                                     (let ((err (aichat-bingai--session-err session)))
+                                       (if err
+                                           (when-let ((reject-func (aichat-bingai--session-reject session)))
+                                             (funcall reject-func err))
+                                         (when-let ((resolve-func (aichat-bingai--session-resolve session)))
+                                           (funcall  resolve-func (aichat-bingai--session-result session))))))))
                      :on-message (lambda (ws frame)
                                    (let ((text (websocket-frame-text frame)))
                                      (condition-case error
