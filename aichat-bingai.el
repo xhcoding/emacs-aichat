@@ -295,13 +295,22 @@ Call `user-cb' when a message arrives."
 (defconst aichat-bingai--chathub-message-delimiter (char-to-string #x1e)
   "Websocket json message delimiter.")
 
+(defun aichat-bingai--chathub-send-heart (ws)
+  "Send type 6 message."
+  (websocket-send-text ws (concat (aichat-json-serialize (list :type 6))
+                                  aichat-bingai--chathub-message-delimiter)))
+
 (defun aichat-bingai--chathub-reply-finished (session &optional error reset)
   "Handler of reply finished."
   (setf (aichat-bingai--session-replying session) nil)
   (setf (aichat-bingai--session-err session) error)
   (setf (aichat-bingai--session-reset session) reset)
-  ;; we close websocket on this conversation finished like Edge
-  (websocket-close (aichat-bingai--session-chathub session)))
+  (let ((err (aichat-bingai--session-err session)))
+    (if err
+        (when-let ((reject-func (aichat-bingai--session-reject session)))
+          (funcall reject-func err))
+      (when-let ((resolve-func (aichat-bingai--session-resolve session)))
+        (funcall  resolve-func (aichat-bingai--session-result session))))))
 
 (defun aichat-bingai--chathub-parse-message (session text)
   "Parse chathub websocket json message."
@@ -342,7 +351,9 @@ Call `user-cb' when a message arrives."
                       (setf (aichat-bingai--session-result session) object)
                     (aichat-bingai--chathub-parse-message-error session (format "%s:%s\n" value message)))))
             (3 (let ((err (aichat-json-access object "{error}")))
-                 (aichat-bingai--chathub-reply-finished session err))))
+                 (aichat-bingai--chathub-reply-finished session err)))
+            (6 (when-let ((chathub (aichat-bingai--session-chathub session)))
+                 (aichat-bingai--chathub-send-heart chathub))))
           (setq start-pos (1+ match-pos)))))
     (setf (aichat-bingai--session-buffer session) (substring buffer start-pos))))
 
@@ -370,26 +381,18 @@ Call resolve when the handshake with chathub passed."
                                  (if (not (aichat-bingai--session-chathub session))
                                      (funcall reject "Chathub unexpected closed during handshake.")
                                    (setf (aichat-bingai--session-chathub session) nil)
-                                   (if (aichat-bingai--session-replying session)
-                                       (progn
-                                         ;; close when replying
-                                         (setf (aichat-bingai--session-replying session) nil)
-                                         (when-let ((reject-func (aichat-bingai--session-reject session)))
-                                           (funcall  reject-func "Chathub closed unexpectedly during reply.")))
-                                     (let ((err (aichat-bingai--session-err session)))
-                                       (if err
-                                           (when-let ((reject-func (aichat-bingai--session-reject session)))
-                                             (funcall reject-func err))
-                                         (when-let ((resolve-func (aichat-bingai--session-resolve session)))
-                                           (funcall  resolve-func (aichat-bingai--session-result session))))))))
+                                   (when (aichat-bingai--session-replying session)
+                                     ;; close when replying
+                                     (setf (aichat-bingai--session-replying session) nil)
+                                     (when-let ((reject-func (aichat-bingai--session-reject session)))
+                                       (funcall  reject-func "Chathub closed unexpectedly during reply.")))))
                      :on-message (lambda (ws frame)
                                    (let ((text (websocket-frame-text frame)))
                                      (condition-case error
                                          (progn
                                            (aichat-debug "Receive handshake response: %s" text)
                                            (aichat-json-parse (car (split-string text aichat-bingai--chathub-message-delimiter)))
-                                           (websocket-send-text ws (concat (aichat-json-serialize (list :type 6))
-                                                                           aichat-bingai--chathub-message-delimiter))
+                                           (aichat-bingai--chathub-send-heart ws)
                                            (setf (websocket-on-message ws)
                                                  (lambda (_ws frame)
                                                    (aichat-bingai--chathub-parse-message session (websocket-frame-text frame))))
