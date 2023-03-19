@@ -436,7 +436,7 @@ Call resolve when the handshake with chathub passed."
    "SearchQuery"
    ])
 
-(defconst aichat-binai--slice-ids
+(defconst aichat-bingai--slice-ids
   [
    "0306wlthrot"
    "0312vpnthro"
@@ -828,7 +828,7 @@ NEW-P is t, which means it is a new conversation."
   (message "%s" msg))
 
 ;;;###autoload
-(defun aichat-bingai-chat (said)
+(defun aichat-bingai-chat (said &optional style)
   "Chat with Bing AI."
   (interactive (list (completing-read "You say: " aichat-bingai--chat-suggestion nil nil)))
   (when (and (car current-prefix-arg)
@@ -849,6 +849,7 @@ NEW-P is t, which means it is a new conversation."
 
       (aichat-bingai-conversation-stream said (lambda (msg)
                                                 (aichat-bingai--chat-handle-reply msg chat))
+                                         :style style
                                          :allowed-message-types ["Chat"
                                                                  "InternalSearchQuery"
                                                                  "InternalSearchResult"
@@ -874,11 +875,12 @@ NEW-P is t, which means it is a new conversation."
 (defun aichat-bingai-assistant-get-buffer ()
   (get-buffer-create aichat-bingai-assistant-buffer))
 
-(defun aichat-bingai-assistant (text)
+(defun aichat-bingai-assistant (text &optional style)
   "Send the region or input to Bing and display the returned result to `aichat-bingai-assistant-buffer'."
   (interactive (list (aichat-read-region-or-input "Input text: ")))
   (when (and text (not (string-empty-p text)))
     (aichat-bingai-conversation text
+                                :style style
                                 :on-success (lambda (msg)
                                               (when-let ((content (aichat-bingai-message-type-2-text msg))
                                                          (buffer (aichat-bingai-assistant-get-buffer)))
@@ -890,7 +892,7 @@ NEW-P is t, which means it is a new conversation."
                                 :on-error (lambda (err)
                                             (message "Error: %s" err)))))
 
-(defun aichat-bingai-replace-or-insert (text)
+(defun aichat-bingai-replace-or-insert (text &optional style)
   "Send the region or input to Bing and replace the selected region or insert at the current position with the returned result."
   (interactive (list (aichat-read-region-or-input "Input text: ")))
   (when (and text (not (string-empty-p text)))
@@ -899,6 +901,7 @@ NEW-P is t, which means it is a new conversation."
            (reg-beg (when (use-region-p) (region-beginning)))
            (reg-end (when (use-region-p) (region-end))))
       (aichat-bingai-conversation text
+                                  :style style
                                   :on-success (lambda (msg)
                                                 (when-let ((content (aichat-bingai-message-type-2-text msg)))
                                                   (with-current-buffer cur-buf
@@ -913,6 +916,7 @@ NEW-P is t, which means it is a new conversation."
                                                &key
                                                (input-prompt "Input text: ")
                                                (text-format "%s")
+                                               (style nil)
                                                (chat nil)
                                                (assistant nil)
                                                (replace-or-insert nil))
@@ -929,19 +933,19 @@ TEXT-FORMAT: Formating string, %s is replaced by what the user input."
            (interactive (list (aichat-read-region-or-input ,input-prompt)))
            (when text
              (let ((query (format ,text-format text)))
-               (aichat-bingai-chat query)))))
+               (aichat-bingai-chat query ,style)))))
        (when ,assistant
          (defun ,assistant-func(text)
            (interactive (list (aichat-read-region-or-input ,input-prompt)))
            (when text
              (let ((query (format ,text-format text)))
-               (aichat-bingai-assistant query)))))
+               (aichat-bingai-assistant query ,style)))))
        (when ,replace-or-insert
          (defun ,replace-func(text)
            (interactive (list (aichat-read-region-or-input ,input-prompt)))
            (when text
              (let ((query (format ,text-format text)))
-               (aichat-bingai-replace-or-insert query))))))))
+               (aichat-bingai-replace-or-insert query ,style))))))))
 
 (provide 'aichat-bingai)
 
