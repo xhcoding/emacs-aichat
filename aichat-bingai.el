@@ -410,7 +410,6 @@ Call resolve when the handshake with chathub passed."
    "disable_emoji_spoken_text"
    "responsible_ai_policy_2235"
    "enablemm"
-   "disbing"
    "trn8req120"
    "vpnthrottle"
    "wlthrottle"
@@ -438,28 +437,33 @@ Call resolve when the handshake with chathub passed."
   [
    "0306wlthrot"
    "0312vpnthro"
-   "228h3adss0"
-   "302blcklists0"
-   "308disbing"
-   "scfraithtr5"
+   "313localgnds0"
+   "anidtest"
+   "creatorv2t"
+   "perfinstcf"
+   "sydpayajax"
    "sydperfinput"
-   "0228caches0"
-   "h3adss0"
-   "scraith50"
    ])
 
-(defun aichat-bingai--make-request (session text style allowed-message-types)
+(defun aichat-bingai--make-request (session text style allowed-message-types options-sets slice-ids)
   (unless allowed-message-types
     (setq allowed-message-types aichat-bingai--allowed-message-types))
+
+  (unless slice-ids
+    (setq slice-ids aichat-bingai--slice-ids))
+
+  (unless options-sets
+    (setq options-sets (aichat-bingai--reply-options style)))
 
   (let* ((conversation (aichat-bingai--session-conversation session))
          (invocation-id (aichat-bingai--session-invocation-id session))
          (request (list :arguments
                         (vector
                          (list :source "cib"
-                               :optionsSets (aichat-bingai--reply-options style)
+                               :optionsSets options-sets
                                :allowedMessageTypes (vconcat allowed-message-types ["Disengaged"])
-                               :sliceIds aichat-binai--slice-ids
+                               :sliceIds slice-ids
+                               :spokenTextMode: "None"
                                :isStartOfSession (if (= 0 invocation-id)
                                                      t
                                                    :json-false)
@@ -516,7 +520,7 @@ Call resolve when the handshake with chathub passed."
     (when (>= invocation-id max-conversation)
       (aichat-bingai--stop-session))))
 
-(async-defun aichat-bingai--send-request (text style allowed-message-types &optional callback)
+(async-defun aichat-bingai--send-request (text style allowed-message-types options-sets slice-ids &optional callback)
   (aichat-bingai--ensure-conversation-valid)
   (let ((session (aichat-bingai--get-current-session)))
     (unless session
@@ -527,7 +531,7 @@ Call resolve when the handshake with chathub passed."
 
     (await (promise-new
             (lambda (resolve reject)
-              (let ((request (aichat-bingai--make-request session text style allowed-message-types)))
+              (let ((request (aichat-bingai--make-request session text style allowed-message-types options-sets slice-ids)))
                 (aichat-debug "Send request:\n%s\n" request)
                 (websocket-send-text (aichat-bingai--session-chathub session) request)
                 (setf (aichat-bingai--session-invocation-id session) (1+ (aichat-bingai--session-invocation-id session))
@@ -559,6 +563,8 @@ Call resolve when the handshake with chathub passed."
                                            &key
                                            (style nil)
                                            (allowed-message-types nil)
+                                           (options-sets nil)
+                                           (slice-ids nil)
                                            (on-success nil)
                                            (on-error nil))
   "Send a chat TEXT to Bing.
@@ -573,7 +579,7 @@ all types in `aichat-bingai--allowed-message-types'."
   (unless allowed-message-types
     (setq allowed-message-types (vector "Chat")))
 
-  (promise-then (aichat-bingai--send-request text style allowed-message-types)
+  (promise-then (aichat-bingai--send-request text style allowed-message-types options-sets slice-ids)
                 (lambda (result)
                   (when on-success
                     (funcall on-success result)))
@@ -586,6 +592,8 @@ all types in `aichat-bingai--allowed-message-types'."
                                                   &key
                                                   (style nil)
                                                   (allowed-message-types nil)
+                                                  (options-sets nil)
+                                                  (slice-ids nil)
                                                   (on-success nil)
                                                   (on-error nil))
   "Send a chat TEXT to Bing.
@@ -602,7 +610,7 @@ all types in `aichat-bingai--allowed-message-types'."
   (unless allowed-message-types
     (setq allowed-message-types (vector "Chat")))
 
-  (promise-then (aichat-bingai--send-request text style allowed-message-types
+  (promise-then (aichat-bingai--send-request text style allowed-message-types options-sets slice-ids
                                              (lambda (message)
                                                (when callback
                                                  (funcall callback message))))
@@ -613,32 +621,7 @@ all types in `aichat-bingai--allowed-message-types'."
                   (when on-error
                     (funcall on-error err)))))
 
-(defun aichat-bingai-send-region-or-input (on-finished &optional prefix suffix)
-  "Send the region or input, you can add a PREFIX or SUFFIX.
-The result is processed in ON-FINISHED and only returns the response text.
-ON-FINISHED: (lambda (content current-buffer current-point region-beginning region-end))"
-  (let ((cur-buf (current-buffer))
-        (beg-pos)
-        (end-pos)
-        (cur-pos)
-        (text))
-    (if (use-region-p)
-        (setq text (buffer-substring-no-properties (region-beginning) (region-end))
-              beg-pos (region-beginning)
-              end-pos (region-end))
-      (setq text (read-string "Input text: ")))
-    (with-current-buffer cur-buf
-      (setq cur-pos (point)))
-    (unless (string-empty-p text)
-      (aichat-bingai-conversation (concat prefix text suffix)
-                                  :on-success (lambda (msg)
-                                                (let ((content (aichat-bingai-message-type-2-text msg)))
-                                                  (when on-finished
-                                                    (funcall on-finished content cur-buf cur-pos beg-pos end-pos))))
-                                  :on-error (lambda (err)
-                                              (message "Error: %s" err))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Messages API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun aichat-bingai-message-type-1-text (message)
   "message[arguments][0][messages][0][text]."
@@ -695,7 +678,7 @@ ON-FINISHED: (lambda (content current-buffer current-point region-beginning regi
                        (cl-loop for suggested-response across suggested-responses
                                 collect (aichat-json-access suggested-response "{text}")))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom aichat-bingai-chat-file (expand-file-name "aichat.md" user-emacs-directory)
   "File path of save chat message."
