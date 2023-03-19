@@ -305,6 +305,8 @@ Call `user-cb' when a message arrives."
   (setf (aichat-bingai--session-replying session) nil)
   (setf (aichat-bingai--session-err session) error)
   (setf (aichat-bingai--session-reset session) reset)
+  (when reset
+    (websocket-close (aichat-bingai--session-chathub session)))
   (let ((err (aichat-bingai--session-err session)))
     (if err
         (when-let ((reject-func (aichat-bingai--session-reject session)))
