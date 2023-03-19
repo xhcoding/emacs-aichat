@@ -388,6 +388,8 @@ Call resolve when the handshake with chathub passed."
                                          (progn
                                            (aichat-debug "Receive handshake response: %s" text)
                                            (aichat-json-parse (car (split-string text aichat-bingai--chathub-message-delimiter)))
+                                           (websocket-send-text ws (concat (aichat-json-serialize (list :type 6))
+                                                                           aichat-bingai--chathub-message-delimiter))
                                            (setf (websocket-on-message ws)
                                                  (lambda (_ws frame)
                                                    (aichat-bingai--chathub-parse-message session (websocket-frame-text frame))))
