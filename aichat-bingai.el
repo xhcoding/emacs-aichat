@@ -290,6 +290,7 @@ Call `user-cb' when a message arrives."
   reject
   (result nil)
   (err nil)
+  (expiry-time nil)
   user-cb)
 
 (defconst aichat-bingai--chathub-message-delimiter (char-to-string #x1e)
@@ -350,8 +351,15 @@ Call `user-cb' when a message arrives."
                        (value (aichat-json-access result "{value}"))
                        (message (aichat-json-access result "{message}")))
                   (if (string= "Success" value)
-                      (setf (aichat-bingai--session-result session) object)
-                    (aichat-bingai--chathub-parse-message-error session (format "%s:%s\n" value message)))))
+                      (progn
+                        (when-let* ((expiry-time-str
+                                     (ignore-errors
+                                       (aichat-json-access object "{item}{conversationExpiryTime}")))
+                                    (expiry-time (date-to-time expiry-time-str)))
+                          (setf (aichat-bingai--session-expiry-time session) expiry-time))
+                        (setf (aichat-bingai--session-result session) object))
+                    (aichat-bingai--chathub-reply-finished session (format "%s:%s\n" value message)
+                                                           (string= "InvalidSession" value)))))
             (3 (let ((err (aichat-json-access object "{error}")))
                  (aichat-bingai--chathub-reply-finished session err)))
             (6 (when-let ((chathub (aichat-bingai--session-chathub session)))
@@ -520,6 +528,10 @@ Call resolve when the handshake with chathub passed."
   (when-let* ((session (aichat-bingai--get-current-session))
               (invocation-id (aichat-bingai--session-invocation-id session))
               (max-conversation (aichat-bingai--session-max-conversation session)))
+    (when-let* ((expiry-time (aichat-bingai--session-expiry-time session))
+                (expiry-p (ignore-errors
+	                        (time-less-p expiry-time nil))))
+      (aichat-bingai--stop-session))
     (when (aichat-bingai--session-reset session)
       (aichat-bingai--stop-session))
     (when (>= invocation-id max-conversation)
@@ -740,7 +752,8 @@ NEW-P is t, which means it is a new conversation."
         (insert "\n" header-char header-char " ")))
     (insert (aichat-bingai--chat-said chat))
     (insert "\n\n")
-    (setf (aichat-bingai--chat-reply-point chat) (point))))
+    (setf (aichat-bingai--chat-reply-point chat) (point))
+    (aichat-bingai--chat-update-prompt chat "Replying...")))
 
 (defun aichat-bingai--chat-update-prompt (chat text)
   (with-current-buffer (aichat-bingai--chat-buffer chat)
