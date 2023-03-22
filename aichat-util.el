@@ -1116,37 +1116,43 @@ CALLBACK      (string)   callbacl to receive reported http data.
       (with-current-buffer buffer
         (goto-char (point-max))
         (insert data)
-
         (goto-char aichat--curl-parser-point)
+        (while (not (= (point) (point-max)))
+          (when (eq 'status aichat--curl-parser-state)
+            (if (not (re-search-forward aichat--http-response-status-line-regexp nil t))
+                (goto-char (point-max)) ;; wait for more data
+              (setq-local aichat--curl-response-status (cons (match-string 2) (match-string 3)))
+              (setq-local aichat--curl-parser-point (point))
 
-        (when (eq 'status aichat--curl-parser-state)
-          (while (re-search-forward aichat--http-response-status-line-regexp nil t)
-            (setq-local aichat--curl-response-status (cons (match-string 2) (match-string 3)))
-            (when aichat--curl-response-callback
-              (funcall aichat--curl-response-callback 'status aichat--curl-response-status))
-            (setq-local aichat--curl-parser-state 'header)
-            (setq-local aichat--curl-parser-point (point))))
+              (unless (string= "Connection established" (cdr aichat--curl-response-status))
+                ;; proxy, wait for next status line
+                (when aichat--curl-response-callback
+                  (funcall aichat--curl-response-callback 'status aichat--curl-response-status))
+                (setq-local aichat--curl-parser-state 'header))))
 
-        (when (eq 'header aichat--curl-parser-state)
-          (when (re-search-forward aichat--http-end-of-headers-regexp nil t)
-            (let* ((bound (point))
-                   (lines (split-string (buffer-substring aichat--curl-parser-point bound) "[\f\t\n\r\v]+")))
-              (mapc (lambda (line)
-                      (let ((kv (split-string line ": ")))
-                        (push (cons (car kv) (cadr kv))
-                              aichat--curl-response-headers)))
-                    lines)
+          (when (eq 'header aichat--curl-parser-state)
+            (if  (not (re-search-forward aichat--http-end-of-headers-regexp nil t))
+                (goto-char (point-max)) ;; wait for more data
+              (let* ((bound (point))
+                     (lines (split-string (buffer-substring aichat--curl-parser-point bound) "[\f\t\n\r\v]+")))
+                (mapc (lambda (line)
+                        (let ((kv (split-string line ": ")))
+                          (push (cons (car kv) (cadr kv))
+                                aichat--curl-response-headers)))
+                      lines)
+                (setq-local aichat--curl-parser-point bound)
+                (when aichat--curl-response-callback
+                  (funcall aichat--curl-response-callback 'headers aichat--curl-response-headers))
+                (setq-local aichat--curl-parser-state 'body))))
+
+          (when (eq 'body aichat--curl-parser-state)
+            (let ((body (buffer-substring aichat--curl-parser-point (point-max))))
               (when aichat--curl-response-callback
-                (funcall aichat--curl-response-callback 'headers aichat--curl-response-headers))
-              (setq-local aichat--curl-parser-point bound)
-              (setq-local aichat--curl-parser-state 'body))))
-
-        (when (eq 'body aichat--curl-parser-state)
-          (let ((body (buffer-substring aichat--curl-parser-point (point-max))))
-            (when aichat--curl-response-callback
-              (funcall aichat--curl-response-callback 'body body))
-            (setq-local aichat--curl-response-body (concat aichat--curl-response-body body))
-            (setq-local aichat--curl-parser-point (point-max))))))))
+                (funcall aichat--curl-response-callback 'body body))
+              (setq-local aichat--curl-response-body (concat aichat--curl-response-body body))
+              (setq-local aichat--curl-parser-point (point-max))
+              ;; wait for more data
+              (goto-char (point-max)))))))))
 
 (defun aichat--curl-process-sentinel (proc status)
   (aichat-debug "curl process sentinel: %s" status)
