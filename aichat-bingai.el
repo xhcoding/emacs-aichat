@@ -106,6 +106,13 @@ When you set this value, bingai will login to www.bing.com through the cookies i
           (const :tag "More Balanced" balanced)
           (const :tag "More Precise" precise)))
 
+(defcustom aichat-bingai-proxy nil
+  "Http proxy of request bingai.
+
+(setq aichat-bingai-proxy \"localhost:51837\")"
+  :group 'aichat-bingai
+  :type 'string)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Internal ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (async-defun aichat-bingai--start-process (program &rest args)
@@ -250,6 +257,7 @@ Re-fetching cookies from `aichat-bing--domain'"
   (seq-let
       (status headers body)
       (await (aichat-http aichat-bingai--create-conversation-url
+                          :proxy aichat-bingai-proxy
                           :headers aichat-bingai--conversation-headers))
     (aichat-debug "status:\n%s\nheaders:\n%s\nbody:\n%s\n" status headers body)
     (if (not (string= "200" (car status)))

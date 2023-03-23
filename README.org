@@ -79,7 +79,15 @@ If you can see the output and there is a =_U= field in the output, then you can 
 - Paste your cookies into a file cookies.json
 - Set =aichat-bingai-cookies-file= to your cookies.json path
 
+*** Proxy [Optional]
 
+Currently only tested http proxy, set =aichat-bingai-proxy= as proxy address, for example:
+
+#+begin_src elisp
+  (setq aichat-bingai-proxy "localhost:51837")
+#+end_src
+
+*If your IP address is in China, you must set up a proxy to access it.*
 
 ** Usage
 
@@ -154,4 +162,10 @@ To feedback your issue, please follow these steps:
 1. Open the debug mode by typing the command =aichat-toggle-debug=.
 2. [[https://github.com/xhcoding/emacs-aichat/issues/new][Submit an issue]] and attach the content of the =*AICHAT-DEBUG*= buffer when an error occurs.
 
+
+* Acknowledgements
+
+- [[https://github.com/acheong08/EdgeGPT][EdgeGPT]]
+- [[https://github.com/manateelazycat/mind-wave][mind-wave]]
+- [[https://github.com/f/awesome-chatgpt-prompts][awesome-chatgpt-prompts]]
 

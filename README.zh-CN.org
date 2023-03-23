@@ -78,6 +78,16 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
 - 将剪贴板内容粘贴到 cookies.json 中
 - 设置 =aichat-bingai-cookies-file= 的值为 cookies.json 文件的路径
 
+*** 配置代理 [可选]
+
+目前只测试过 http 代理，设置 =aichat-bingai-proxy= 为代理地址，比如：
+
+#+begin_src elisp
+  (setq aichat-bingai-proxy "localhost:51837")
+#+end_src
+
+
+*如果你的 IP 地址在中国，必须要设置代理才能访问*
 
 ** 使用
 
@@ -149,3 +159,9 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 要反馈你的问题，请按照以下步骤操作：
 1. 通过输入命令 =aichat-toggle-debug= 来打开调试模式。
 2. 当出现错误时，[[https://github.com/xhcoding/emacs-aichat/issues/new][提交一个问题]] 并附上 =*AICHAT-DEBUG*= 缓冲区的内容。
+
+* 感谢
+
+- [[https://github.com/acheong08/EdgeGPT][EdgeGPT]]
+- [[https://github.com/manateelazycat/mind-wave][mind-wave]]
+- [[https://github.com/f/awesome-chatgpt-prompts][awesome-chatgpt-prompts]]
