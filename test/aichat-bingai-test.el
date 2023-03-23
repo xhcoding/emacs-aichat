@@ -105,6 +105,9 @@
 (defun aichat-bingai-test-message-type-2 ()
   (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-2.json" (file-name-directory (locate-library "aichat-util")))))
 
+(defun aichat-bingai-test-message-type-2-image-prompt ()
+  (aichat-json-parse-file (expand-file-name "test/aichat-bingai-message-type-2-image-prompt.json" (file-name-directory (locate-library "aichat-util")))))
+
 
 (ert-deftest aichat-bingai-message-type-1-text ()
   (let ((message-type-1 (aichat-bingai-test-message-type-1)))
@@ -122,9 +125,17 @@
   (let ((message-type-2 (aichat-bingai-test-message-type-2)))
     (should (string= (aichat-bingai-message-type-2-text message-type-2) "根据Bing翻译[^1^]，这句话的英文是：I want to travel.😊"))))
 
+(ert-deftest aichat-bingai-message-type-2-search-result ()
+  (let ((message (aichat-bingai-test-message-type-2)))
+    (should (= (length (aichat-bingai-message-type-2-search-result message)) 4))))
+
 (ert-deftest aichat-bingai-message-type-2-suggestion ()
   (let ((message-type-2 (aichat-bingai-test-message-type-2)))
     (should (= (length (aichat-bingai-message-type-2-suggestion message-type-2)) 3))))
+
+(ert-deftest aichat-bingai-message-type-2-image-prompt ()
+  (let ((message-type-2 (aichat-bingai-test-message-type-2-image-prompt)))
+    (should (string= (aichat-bingai-message-type-2-image-prompt message-type-2) "一只红色的猫和一只绿色的狗"))))
 
 (provide 'aichat-bingai-test)
 ;;; aichat-bingai-test.el ends here

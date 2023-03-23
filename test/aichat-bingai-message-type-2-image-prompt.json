@@ -1,0 +1,148 @@
+{
+  "type": 2,
+  "invocationId": "5",
+  "item": {
+    "messages": [
+      {
+        "text": "创建一幅图片，里面应该有一只猫和一直狗，猫的颜色为红色，狗的颜色为绿色",
+        "author": "user",
+        "from": {
+          "id": "1055518581560278",
+          "name": null
+        },
+        "createdAt": "2023-03-23T15:20:51.5583496+00:00",
+        "timestamp": "2023-03-23T15:20:51.5558201+00:00",
+        "locale": "en-us",
+        "market": "en-us",
+        "region": "us",
+        "messageId": "df287ac4-3421-4b79-a7f2-082da08f8113",
+        "requestId": "df287ac4-3421-4b79-a7f2-082da08f8113",
+        "offense": "None",
+        "feedback": {
+          "tag": null,
+          "updatedOn": null,
+          "type": "None"
+        },
+        "contentOrigin": "cib",
+        "privacy": null,
+        "inputMethod": "Keyboard"
+      },
+      {
+        "text": "我会尝试创建这样的图片。",
+        "author": "bot",
+        "createdAt": "2023-03-23T15:20:58.1950527+00:00",
+        "timestamp": "2023-03-23T15:20:58.1950527+00:00",
+        "messageId": "0160433c-e842-4a9e-9945-d6d6be48faa1",
+        "requestId": "df287ac4-3421-4b79-a7f2-082da08f8113",
+        "offense": "None",
+        "adaptiveCards": [
+          {
+            "type": "AdaptiveCard",
+            "version": "1.0",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "我会尝试创建这样的图片。\n",
+                "wrap": true
+              }
+            ]
+          }
+        ],
+        "sourceAttributions": [],
+        "feedback": {
+          "tag": null,
+          "updatedOn": null,
+          "type": "None"
+        },
+        "contentOrigin": "DeepLeo",
+        "privacy": null,
+        "suggestedResponses": [
+          {
+            "text": "让它们互相看着",
+            "author": "user",
+            "createdAt": "2023-03-23T15:21:06.5905311+00:00",
+            "timestamp": "2023-03-23T15:21:06.5905311+00:00",
+            "messageId": "11093c5a-ebad-40a1-9966-c4d4c9fdfd60",
+            "messageType": "Suggestion",
+            "offense": "Unknown",
+            "feedback": {
+              "tag": null,
+              "updatedOn": null,
+              "type": "None"
+            },
+            "contentOrigin": "DeepLeo",
+            "privacy": null
+          },
+          {
+            "text": "给它们加上帽子",
+            "author": "user",
+            "createdAt": "2023-03-23T15:21:06.5905338+00:00",
+            "timestamp": "2023-03-23T15:21:06.5905338+00:00",
+            "messageId": "fe3c4827-6fb7-4efe-ade2-b7e12384eac4",
+            "messageType": "Suggestion",
+            "offense": "Unknown",
+            "feedback": {
+              "tag": null,
+              "updatedOn": null,
+              "type": "None"
+            },
+            "contentOrigin": "DeepLeo",
+            "privacy": null
+          },
+          {
+            "text": "把它们换成老鼠和大象",
+            "author": "user",
+            "createdAt": "2023-03-23T15:21:06.5905342+00:00",
+            "timestamp": "2023-03-23T15:21:06.5905342+00:00",
+            "messageId": "e6a16ed5-77d1-4bf4-b913-a4758ba3e02e",
+            "messageType": "Suggestion",
+            "offense": "Unknown",
+            "feedback": {
+              "tag": null,
+              "updatedOn": null,
+              "type": "None"
+            },
+            "contentOrigin": "DeepLeo",
+            "privacy": null
+          }
+        ],
+        "spokenText": "我会尝试创建这样的图片"
+      },
+      {
+        "contentType": "IMAGE",
+        "text": "一只红色的猫和一只绿色的狗",
+        "hiddenText": "一只红色的猫和一只绿色的狗",
+        "author": "bot",
+        "createdAt": "2023-03-23T15:21:01.3617582+00:00",
+        "timestamp": "2023-03-23T15:21:01.3617582+00:00",
+        "messageId": "294eaba6-7da0-4d69-86cd-6c94046f73ae",
+        "requestId": "df287ac4-3421-4b79-a7f2-082da08f8113",
+        "messageType": "GenerateContentQuery",
+        "offense": "None",
+        "feedback": {
+          "tag": null,
+          "updatedOn": null,
+          "type": "None"
+        },
+        "contentOrigin": "DeepLeo",
+        "privacy": null
+      }
+    ],
+    "firstNewMessageIndex": 1,
+    "conversationId": "51D|BingProd|80EE7E576CD5037C2A8422504040F81F1D57E10E4CDBE5F313585D592ADC8909",
+    "requestId": "df287ac4-3421-4b79-a7f2-082da08f8113",
+    "conversationExpiryTime": "2023-03-23T21:21:06.6765729Z",
+    "telemetry": {
+      "metrics": null,
+      "startTime": "2023-03-23T15:20:51.5558711Z"
+    },
+    "throttling": {
+      "maxNumUserMessagesInConversation": 15,
+      "numUserMessagesInConversation": 6
+    },
+    "result": {
+      "value": "Success",
+      "serviceVersion": "20230323.53"
+    }
+  }
+}

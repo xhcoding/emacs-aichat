@@ -1217,10 +1217,13 @@ CALLBACK      (string)   callbacl to receive reported http data.
                                                 (with-current-buffer stderr
                                                   (insert output)))))
                         (cleanup (lambda ()
-                                   (kill-buffer stdout)
+                                   (when (buffer-live-p stdout)
+                                     (kill-buffer stdout))
                                    (delete-process stderr-pipe)
-                                   (kill-buffer stderr)
-                                   (kill-buffer stderr-pipe-name))))
+                                   (when (buffer-live-p stderr)
+                                     (kill-buffer stderr))
+                                   (when (buffer-live-p stderr-pipe-name)
+                                     (kill-buffer stderr-pipe-name)))))
 
                    (aichat-debug "cur command: %s, config: \n%s" command config)
                    (with-current-buffer stdout
