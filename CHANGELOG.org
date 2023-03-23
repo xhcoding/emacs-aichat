@@ -1,6 +1,11 @@
 
 * Changelog
 
+** 1.0.1 - 2023-03-23
+
+- fix some bugs
+- add =aichat-bingai-prompt-create=
+
 ** 1.0.0 - 2023-03-14
 
 🎉 Welcome to emacs-aichat v1.0.0 🎉
