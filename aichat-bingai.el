@@ -263,14 +263,16 @@ Re-fetching cookies from `aichat-bing--domain'"
     (aichat-debug "status:\n%s\nheaders:\n%s\nbody:\n%s\n" status headers body)
     (if (not (string= "200" (car status)))
         (error "Create conversation failed: %s" status)
-      (let* ((data (aichat-json-parse body))
-             (result-value (aichat-json-access data "{result}{value}")))
-        (if (not (string= "Success" result-value))
-            (error "Create conversation failed: %s" body)
-          (aichat-bingai--conversation-new
-           :id (aichat-json-access data "{conversationId}")
-           :signature (aichat-json-access data "{conversationSignature}")
-           :client-id (aichat-json-access data "{clientId}")))))))
+      (if (string-empty-p body)
+          (error "Your network settings are preventing access to this feature.")
+        (let* ((data (aichat-json-parse body))
+               (result-value (aichat-json-access data "{result}{value}")))
+          (if (not (string= "Success" result-value))
+              (error "Create conversation failed: %s" body)
+            (aichat-bingai--conversation-new
+             :id (aichat-json-access data "{conversationId}")
+             :signature (aichat-json-access data "{conversationSignature}")
+             :client-id (aichat-json-access data "{clientId}"))))))))
 
 (cl-defstruct (aichat-bingai--session
                (:constructor aichat-bingai--session-new)
