@@ -235,7 +235,8 @@ Re-fetching cookies from `aichat-bing--domain'"
     ("sec-fetch-mode" . "cors")
     ("sec-fetch-site" . "same-origin")
     ("x-ms-client-request-id" . ,(aichat-uuid))
-    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32"))
+    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32")
+    ("x-forwarded-for" . "1.1.1.1"))
   "The headers of create conversation.")
 
 (defconst aichat-bingai--chathub-headers
