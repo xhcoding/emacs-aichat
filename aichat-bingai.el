@@ -883,9 +883,10 @@ NEW-P is t, which means it is a new conversation."
 (defun aichat-bingai--chat-handle-reply-finished (chat msg)
   ;; update suggestion
   (setq aichat-bingai--chat-suggestion (aichat-bingai-message-type-2-suggestion msg))
+
   ;; convert to org
-  (when (derived-mode-p 'org-mode)
-    (with-current-buffer (aichat-bingai--chat-buffer chat)
+  (with-current-buffer (aichat-bingai--chat-buffer chat)
+    (when (derived-mode-p 'org-mode)
       (save-mark-and-excursion
         (aichat-bingai--chat-convert-to-org))))
 
