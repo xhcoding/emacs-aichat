@@ -99,7 +99,7 @@
 
 (defun aichat-openai-api-key ()
   "Get openai api key from `auth-sources'."
-  (auth-source-pick-first-password :host "platform.openai.com" :user "aichat-openai"))
+  (lambda () (auth-source-pick-first-password :host "platform.openai.com" :user "aichat-openai")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
