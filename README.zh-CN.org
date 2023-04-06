@@ -6,6 +6,10 @@
 
 在 Emacs 中使用 AI 聊天功能，目前包括 Bing Chat 和 OpenAI 的 ChatGpt 。
 
+#+html: <p align="center"><img src="images/aichat-bingai-chat.png"/></p>
+
+[[https://github.com/xhcoding/emacs-aichat/blob/main/images/examples.org][查看更多例子]]
+
 * 安装
 
 ** 依赖

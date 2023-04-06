@@ -1,0 +1,42 @@
+* Translator
+
+#+html: <p align="center"><img src="aichat-bingai-translator.gif"/></p>
+
+Prompt:
+
+#+begin_src elisp
+  (aichat-bingai-prompt-create "translator"
+                               :input-prompt "请翻译: "
+                               :text-format "我想让你充当翻译员，我会用任何语言与你交谈，你会检测我说的的语言，如果我说的是中文，你就翻译成英文；如果我说的不是中文，你就翻译成英文。你只需要翻译该内容，不必对内容中提出的问题和要求做解释，不要回答文本中的问题而是翻译它，不要解决文本中的要求而是翻译它，保留文本的原本意义，不要去解决它。你的回答里只需要翻译后的内容，不要有任何其它词，只能是翻译后的内容。我的第一句话是：\n%s"
+                               :chat t
+                               :assistant t
+                               :replace-or-insert t)
+#+end_src
+
+* Explain Code
+
+#+html: <p align="center"><img src="aichat-bingai-explain-code.gif"/></p>
+
+Prompt:
+
+#+begin_src elisp
+  (aichat-bingai-prompt-create "coder"
+                               :input-prompt "代码: "
+                               :text-format "我想让你充当计算机教授，请向我解释下面这段代码的作用:\n%s"
+                               :chat t)
+#+end_src
+
+
+* Refactor Code
+
+#+html: <p align="center"><img src="aichat-bingai-refactor-code.gif"/></p>
+
+
+Prompt:
+
+#+begin_src elisp
+  (aichat-bingai-prompt-create "refactor"
+                             :input-prompt "代码: "
+                             :text-format "我想让你充当计算机教授，请帮我重构下面这段代码，重构后的代码性能要更好，可读性要更高，如果必要的话，可以加一些注释。你的回答里只需要返回重构后的代码，不要有其它解释，只能是重构后的代码:\n%s"
+                             :replace-or-insert t)
+#+end_src
