@@ -7,6 +7,8 @@
 
 Use AI chat features in Emacs, currently including Bing Chat and OpenAI’s ChatGpt.
 
+#+html: <p align="center"><img src="images/aichat-bingai-chat.png" width=800 height=600/></p>
+
 * Installation
 
 ** Requirements
