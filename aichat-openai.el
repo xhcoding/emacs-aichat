@@ -97,9 +97,15 @@
   :group 'aichat-openai
   :type 'string)
 
-(defun aichat-openai-api-key ()
-  "Get openai api key from `auth-sources'."
-  (auth-source-pick-first-password :host "platform.openai.com" :user "aichat-openai"))
+(defun aichat-openai--default-api-key-function ()
+  "Fetch the API key with auth-source."
+  (auth-source-pick-first-password :host "platform.openai.com"))
+
+(defcustom aichat-openai-api-key #'aichat-openai--default-api-key-function
+  "OpenAI key as a string or a function that loads and returns it."
+  :type '(choice (function :tag "Function")
+          (string :tag "String"))
+  :group 'aichat-openai)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -109,9 +115,12 @@
 
 (defconst aichat-openai--chat-completions-request-type "POST" "The request type of chat completions api.")
 
-(defvar aichat-openai--http-headers `(("Content-Type" . "application/json")
-                                      ("Authorization" . ,(format "Bearer %s" (aichat-openai-api-key))))
-  "The default headers of openai request.")
+(defun aichat-openai--make-http-headers ()
+  "Create http headers to send in requests to the API."
+  `(("Content-Type" . "application/json")
+    ("Authorization" . ,(format "Bearer %s" (if (functionp aichat-openai-api-key)
+                                                (funcall aichat-openai-api-key)
+                                              aichat-openai-api-key)))))
 
 (cl-defun aichat-openai-make-chat-messages (&rest settings
                                                   &key
@@ -151,7 +160,7 @@ Look https://platform.openai.com/docs/api-reference/chat."
     (promise-then (aichat-http aichat-openai--chat-completions-url
                                :proxy aichat-openai-proxy
                                :type aichat-openai--chat-completions-request-type
-                               :headers aichat-openai--http-headers
+                               :headers (aichat-openai--make-http-headers)
                                :data data)
                   (lambda (value)
                     (aichat-debug "Received: %s" value)
@@ -194,7 +203,7 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                                                   (funcall callback (aichat-json-parse event-data)))))
                                             :proxy aichat-openai-proxy
                                             :type aichat-openai--chat-completions-request-type
-                                            :headers aichat-openai--http-headers
+                                            :headers (aichat-openai--make-http-headers)
                                             :data data)
                   (lambda (value)
                     (seq-let (status headers body) value
