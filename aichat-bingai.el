@@ -1019,7 +1019,7 @@ NEW-P is t, which means it is a new conversation."
                                                 (when-let ((content (aichat-bingai-message-type-2-text msg)))
                                                   (with-current-buffer cur-buf
                                                     (if (and reg-beg reg-end)
-                                                        (replace-regexp ".*" content nil reg-beg reg-end)
+                                                        (replace-region-contents reg-beg reg-end (lambda () content))
                                                       (goto-char cur-pos)
                                                       (insert content)))))
                                   :on-error (lambda (err)
