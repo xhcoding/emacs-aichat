@@ -276,8 +276,9 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
     (save-mark-and-excursion
       (goto-char (point-max))
       (when (re-search-backward "^# " nil t)
-        (with-restriction (point) (point-max)
-                          (aichat-openai-chat--buffer-messages (current-buffer)))))))
+        (save-restriction
+          (narrow-to-region (point) (point-max))
+          (aichat-openai-chat--buffer-messages (current-buffer)))))))
 
 (defun aichat-openai-chat--send-messages (messages buffer)
   "Send MESSAGES to OpenAI, insert response to BUFFER."
