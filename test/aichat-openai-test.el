@@ -89,13 +89,17 @@
 
 ;;; Code:
 
+(defun aichat-openai-chat-test-file ()
+  (expand-file-name "test/aichat-openai-chat-buffer.aichat"
+                    (file-name-directory (locate-library "aichat-openai"))))
+
 (ert-deftest aichat-openai-chat--buffer-messages-test ()
-  (let* ((buffer (find-file-noselect "aichat-openai-chat-buffer.aichat"))
+  (let* ((buffer (find-file-noselect (aichat-openai-chat-test-file)))
          (result (aichat-openai-chat--buffer-messages buffer)))
     (should (equal result '(:system "You are a helpful assistant." :user "Who won the world series in 2020?" :assistant "The Los Angeles Dodgers won the World Series in 2020.")))))
 
 (ert-deftest aichat-openai-chat--heading-messages-test ()
-  (let* ((buffer (find-file-noselect "aichat-openai-chat-buffer.aichat"))
+  (let* ((buffer (find-file-noselect (aichat-openai-chat-test-file)))
          (result (aichat-openai-chat--heading-messages buffer)))
     (should (equal result '(:assistant "The Los Angeles Dodgers won the World Series in 2020.")))))
 
