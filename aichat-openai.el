@@ -83,6 +83,8 @@
 
 (require 'aichat-util)
 
+(require 'markdown-mode)
+
 ;;; Code:
 
 (defgroup aichat-openai nil
@@ -104,10 +106,10 @@
 (defcustom aichat-openai-api-key #'aichat-openai--default-api-key-function
   "OpenAI key as a string or a function that loads and returns it."
   :type '(choice (function :tag "Function")
-          (string :tag "String"))
+                 (string :tag "String"))
   :group 'aichat-openai)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst aichat-openai--chat-completions-url "https://api.openai.com/v1/chat/completions" "The url of chat completions api.")
 
@@ -209,14 +211,14 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                     (seq-let (status headers body) value
                       (if (string= "200" (car status))
                           (when on-success
-                            (funcall on-success (aichat-json-parse body)))
+                            (funcall on-success body))
                         (when on-error
                           (funcall on-error body)))))
                   (lambda (err)
                     (when on-error
                       (funcall on-error err))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun aichat-openai-chat-completions-content (msg)
   "[choices][0][message][content]"
@@ -226,30 +228,129 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
   "[choices][0][delta][content]"
   (aichat-json-access msg "{choices}[0]{delta}{content}"))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun aichat-openai-chat-completions-delta-role (msg)
+  "[choices][0][delta][role]"
+  (aichat-json-access msg "{choices}[0]{delta}{role}"))
 
-(defun aichat-openai-chat-demo (say)
-  "This is just a demo."
-  (interactive "sYou say: ")
-  (let ((buf (get-buffer-create "*chat-demo*")))
-    (switch-to-buffer buf)
-    (with-current-buffer buf
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom aichat-openai-chat-directory (expand-file-name "aichat/openai" user-emacs-directory)
+  "The directory of save chat file."
+  :group 'aichat-openai
+  :type 'string)
+
+(defcustom aichat-openai-chat-display-function 'switch-to-buffer
+  "The function of display chat buffer."
+  :group 'aichat-openai
+  :type 'symbol)
+
+(defun aichat-openai-chat--buffer-messages (buffer)
+  "Make messages with BUFFER's content."
+  (with-current-buffer buffer
+    (save-mark-and-excursion
+      (goto-char (point-min))
+      (let ((messages (list))
+            (role)
+            (message-beg)
+            (message-end)
+            (message))
+        (catch 'finished
+          (while t
+            (if (re-search-forward "^# \\([a-zA-Z]+\\)\n" nil t)
+                (setq role (downcase (string-trim (match-string 1))))
+              (throw 'finished nil))
+            (setq message-beg (point))
+            (if (re-search-forward "^#" nil t)
+                (progn
+                  (backward-char)
+                  (setq message-end (point)))
+              (setq message-end (point-max)))
+            (setq message (string-trim (buffer-substring-no-properties message-beg message-end)))
+            (push (intern (concat ":" role)) messages)
+            (push message messages)))
+        (reverse messages)))))
+
+(defun aichat-openai-chat--heading-messages (buffer)
+  "Make messages with BUFFER's last heading content."
+  (with-current-buffer buffer
+    (save-mark-and-excursion
       (goto-char (point-max))
-      (insert say)
-      (insert "\n"))
-    (aichat-openai-chat-completions-stream
-     (aichat-openai-make-chat-messages :user say)
-     (lambda (msg)
-       (let ((delta-content (aichat-openai-chat-completions-delta-content msg)))
-         (when delta-content
-           (with-current-buffer buf
+      (when (re-search-backward "^# " nil t)
+        (with-restriction (point) (point-max)
+                          (aichat-openai-chat--buffer-messages (current-buffer)))))))
+
+(defun aichat-openai-chat--send-messages (messages buffer)
+  "Send MESSAGES to OpenAI, insert response to BUFFER."
+  (aichat-openai-chat-completions-stream
+   (apply #'aichat-openai-make-chat-messages messages)
+   (lambda (msg)
+     (let ((delta-role (aichat-openai-chat-completions-delta-role msg))
+           (delta-content (aichat-openai-chat-completions-delta-content msg)))
+       (when (buffer-live-p buffer)
+         (with-current-buffer buffer
+           (save-mark-and-excursion
              (goto-char (point-max))
-             (insert delta-content)))))
-     :on-error (lambda (err)
-                 (message "error: %s"err)))))
+             (when delta-role
+               (insert (format "\n# %s%s\n\n" (upcase (substring delta-role 0 1)) (substring delta-role 1))))
+             (when delta-content
+               (insert delta-content)))))))
+   :on-success (lambda (_)
+                 (when (buffer-live-p buffer)
+                   (goto-char (point-max))
+                   (insert "\n\n# User\n\n")))
+   :on-error (lambda (err)
+               (message "error: %s"err))))
 
+(defun aichat-openai-chat-send-buffer ()
+  "Send current buffer content to OpenAI."
+  (interactive)
+  (when-let* ((buffer (current-buffer))
+              (messages (aichat-openai-chat--buffer-messages buffer)))
+    (aichat-openai-chat--send-messages messages buffer)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Assistant ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun aichat-openai-chat-send-last-heading ()
+  "Send last heading content to OpenAI."
+  (interactive)
+  (when-let* ((buffer (current-buffer))
+              (messages (aichat-openai-chat--heading-messages buffer)))
+    (aichat-openai-chat--send-messages messages buffer)))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.aichat\\'" . aichat-openai-chat-mode))
+
+;;;###autoload
+(define-derived-mode aichat-openai-chat-mode markdown-mode "aichat-openai-chat"
+  "Major mode for openai chat."
+  (setq-local markdown-hide-markup t)
+  (when (string-empty-p (buffer-string))
+    (insert "# User\n"))
+  (define-key aichat-openai-chat-mode-map (kbd "C-c C-c") #'aichat-openai-chat-send-buffer)
+  (define-key aichat-openai-chat-mode-map (kbd "C-c C-l") #'aichat-openai-chat-send-last-heading))
+
+;;;###autoload
+(defun aichat-openai-chat (buffer)
+  "If the chat buffer is not found, create a new chat buffer, otherwise switch to the opened chat buffer."
+  (interactive (list (let ((opened-buffers (cl-loop for buffer in (buffer-list)
+                                                    append (with-current-buffer buffer
+                                                             (when (derived-mode-p 'aichat-openai-chat-mode)
+                                                               (list (buffer-name)))))))
+                       (if (and opened-buffers (not (and (car current-prefix-arg)
+                                                         (= (car current-prefix-arg) 4))))
+                           (if (= 1 (length opened-buffers))
+                               (car opened-buffers)
+                             (completing-read "Select buffer: " opened-buffers))
+                         (when-let* ((name
+                                      (completing-read "Chat name: "
+                                                       (directory-files aichat-openai-chat-directory nil
+                                                                        "^\\([^.]\\|\\.[^.]\\|\\.\\..\\)")))
+                                     (filename (expand-file-name (if (string-suffix-p ".aichat" name) name
+                                                                   (concat name ".aichat"))
+                                                                 aichat-openai-chat-directory)))
+                           (make-directory aichat-openai-chat-directory t)
+                           (find-file-noselect filename))))))
+  (funcall aichat-openai-chat-display-function buffer))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Assistant ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom aichat-openai-assistant-buffer "*Aichat-OpenAI-Assistant*"
   "The buffer of show assistant message."

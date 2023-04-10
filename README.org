@@ -7,16 +7,12 @@
 
 Use AI chat features in Emacs, currently including Bing Chat and OpenAI’s ChatGpt.
 
-#+html: <p align="center"><img src="images/aichat-bingai-chat.png"/></p>
-
-[[https://github.com/xhcoding/emacs-aichat/blob/main/images/examples.org][View more examples]]
-
 * Installation
 
 ** Requirements
 
 - [[https://github.com/ahyatt/emacs-websocket][emacs-websocket]] To communicate with Bing Chat, if you have already installed this package, please update to the latest version.
-- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]] 
+- [[https://github.com/chuntaro/emacs-async-await][emacs-async-await]]
 - [[https://github.com/jrblevin/markdown-mode][markdown-mode]]
 
 ** Install
@@ -46,6 +42,11 @@ Or load separately
 #+end_src
 
 * Bing Chat
+
+#+html: <p align="center"><img src="images/aichat-bingai-chat.png"/></p>
+
+[[https://github.com/xhcoding/emacs-aichat/blob/main/images/examples.org][View more examples]]
+
 
 Below is information on setting up Bing AI. If you are interested in learning about using OpenAI, please scroll down to the OpenAI section.
 
@@ -128,6 +129,8 @@ The above configuration will generate three functions: =aichat-bingai-chat-trans
 
 * OpenAI
 
+#+html: <p align="center"><img src="images/aichat-openai-chat.png"/></p>
+
 ** Setup
 
 *** AppKey
@@ -150,7 +153,14 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
 
 ** Usage
 
-*** Commands
+*** Chat
+
+1. Create a new chat file using =aichat-openai-chat=.
+2. Enter the chat content.
+3. Use =aichat-openai-chat-send-buffer (C-c C-c)= to send the entire contents of the buffer,
+   or use =aichat-openai-chat-last-heading (C-c C-l)= to only send the last heading message.
+
+*** Assistant
 
 - =aichat-openai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-openai-assistant-buffer=
 
@@ -159,6 +169,8 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
 - =aichat-openai-proxy= : set up an HTTP proxy that requests OpenAI
 - =aichat-openai-assistant-buffer= : the buffer name of the OpenAI Assistant result
 - =aichat-openai-assistant-display-function= : the function of display assistant buffer
+- =aichat-openai-chat-directory= : Directory for storing chat files
+- =aichat-openai-chat-display-function= : Function to display chat buffer
 
 * Feedback Issues
 
@@ -172,4 +184,3 @@ To feedback your issue, please follow these steps:
 - [[https://github.com/acheong08/EdgeGPT][EdgeGPT]]
 - [[https://github.com/manateelazycat/mind-wave][mind-wave]]
 - [[https://github.com/f/awesome-chatgpt-prompts][awesome-chatgpt-prompts]]
-

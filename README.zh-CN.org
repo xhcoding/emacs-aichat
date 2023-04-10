@@ -6,10 +6,6 @@
 
 在 Emacs 中使用 AI 聊天功能，目前包括 Bing Chat 和 OpenAI 的 ChatGpt 。
 
-#+html: <p align="center"><img src="images/aichat-bingai-chat.png"/></p>
-
-[[https://github.com/xhcoding/emacs-aichat/blob/main/images/examples.org][查看更多例子]]
-
 * 安装
 
 ** 依赖
@@ -45,6 +41,10 @@
 #+end_src
 
 * Bing Chat
+
+#+html: <p align="center"><img src="images/aichat-bingai-chat.png"/></p>
+
+[[https://github.com/xhcoding/emacs-aichat/blob/main/images/examples.org][查看更多例子]]
 
 下面是关于使用 Bing Chat 配置，如果你想要了解关于 OpenAI 的使用，请向下移动到 OpenAI 章节
 
@@ -127,6 +127,8 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
 
 * OpenAI
 
+#+html: <p align="center"><img src="images/aichat-openai-chat.png"/></p>
+
 ** 设置
 
 *** 配置 AppKey
@@ -148,7 +150,14 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 
 ** 使用
 
-*** 命令
+*** 聊天模式
+
+1. 用 =aichat-openai-chat= 创建一个新的聊天文件
+2. 输入聊天内容
+3. =aichat-openai-chat-send-buffer (C-c C-c)= 发送整个 buffer 的内容 ，
+   或者用 =aichat-openai-chat-last-heading (C-c C-l)= 发送最后一个 User 内容
+
+*** 助手模式
 
 - =aichat-openai-assistant= : 发送选中区域或输入内容，将结果显示在 =aichat-openai-assistant-buffer= 中
 
@@ -157,7 +166,10 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 - =aichat-openai-proxy= : 设置请求 openai 的 http 代理
 - =aichat-openai-assistant-buffer= : OpenAI 助手信息的 buffer 名
 - =aichat-openai-assistant-display-function= ：显示 OpenAI 助手 Buffer 的函数
+- =aichat-openai-chat-directory= : 存放聊天文件的目录
+- =aichat-openai-chat-display-function= : 显示聊天 buffer 的函数
 
+  
 * 反馈问题
 
 要反馈你的问题，请按照以下步骤操作：
