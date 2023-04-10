@@ -105,13 +105,18 @@
 
 (defcustom aichat-openai-api-key #'aichat-openai--default-api-key-function
   "OpenAI key as a string or a function that loads and returns it."
+  :group 'aichat-openai
   :type '(choice (function :tag "Function")
-                 (string :tag "String"))
-  :group 'aichat-openai)
+                 (string :tag "String")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defconst aichat-openai--chat-completions-url "https://api.openai.com/v1/chat/completions" "The url of chat completions api.")
+(defcustom aichat-openai-domain "https://api.openai.com"
+  "OpenAI domain."
+  :group 'aichat-openai
+  :type 'string)
+
+(defconst aichat-openai--chat-completions-url "/v1/chat/completions" "The url of chat completions api.")
 
 (defconst aichat-openai--chat-completions-model "gpt-3.5-turbo" "The model of chat completions api.")
 
@@ -159,7 +164,7 @@ Look https://platform.openai.com/docs/api-reference/chat."
 
     (aichat-debug "Request %s with data:\n%s\n" aichat-openai--chat-completions-url data)
 
-    (promise-then (aichat-http aichat-openai--chat-completions-url
+    (promise-then (aichat-http (concat aichat-openai-domain aichat-openai--chat-completions-url)
                                :proxy aichat-openai-proxy
                                :type aichat-openai--chat-completions-request-type
                                :headers (aichat-openai--make-http-headers)
@@ -197,7 +202,7 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
 
     (aichat-debug "Request %s with data:\n%s\n" aichat-openai--chat-completions-url data)
 
-    (promise-then (aichat-http-event-source aichat-openai--chat-completions-url
+    (promise-then (aichat-http-event-source (concat aichat-openai-domain aichat-openai--chat-completions-url)
                                             (lambda (event-id event-data)
                                               (aichat-debug "Received event: %s, data: \n%s\n" event-id event-data)
                                               (unless (string= event-data "[DONE]")
