@@ -382,6 +382,52 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                                   :on-error (lambda (err)
                                               (message "error: %s"err))))
 
+(defun aichat-openai-replace-or-insert (text)
+  "Send the region or input to OpenAI and replace the selected region or insert at the current position with the returned result."
+  (interactive (list (aichat-read-region-or-input "Input text: ")))
+  (when (and text (not (string-empty-p text)))
+    (let* ((cur-buf (current-buffer))
+           (cur-pos (with-current-buffer cur-buf (point)))
+           (reg-beg (when (use-region-p) (region-beginning)))
+           (reg-end (when (use-region-p) (region-end))))
+      (aichat-openai-chat-completions (aichat-openai-make-chat-messages
+                                       :user text)
+                                      :on-success (lambda (msg)
+                                                    (when-let ((content (aichat-openai-chat-completions-content msg)))
+                                                      (with-current-buffer cur-buf
+                                                        (if (and reg-beg reg-end)
+                                                            (replace-region-contents reg-beg reg-end (lambda () content))
+                                                          (goto-char cur-pos)
+                                                          (insert content)))))
+                                      :on-error (lambda (err)
+                                                  (message "Error: %s" err))))))
+
+(cl-defmacro aichat-openai-prompt-create (name &rest args
+                                               &key
+                                               (input-prompt "Input text: ")
+                                               (text-format "%s")
+                                               (assistant nil)
+                                               (replace-or-insert nil))
+  "This macro will generate two functions: aichat-openai-assistant-name or aichat-openai-replace-or-insert-name.
+
+INPUT-PROMPT: The prompt before the user input in minibuffer.
+TEXT-FORMAT: Formating string, %s is replaced by what the user input."
+  (let ((assistant-func (intern (format "aichat-openai-assistant-%s" name)))
+        (replace-func (intern (format "aichat-openai-replace-or-insert-%s" name))))
+    `(progn
+       (when ,assistant
+         (defun ,assistant-func(text)
+           (interactive (list (aichat-read-region-or-input ,input-prompt)))
+           (when text
+             (let ((query (format ,text-format text)))
+               (aichat-openai-assistant query)))))
+       (when ,replace-or-insert
+         (defun ,replace-func(text)
+           (interactive (list (aichat-read-region-or-input ,input-prompt)))
+           (when text
+             (let ((query (format ,text-format text)))
+               (aichat-openai-replace-or-insert query))))))))
+
 (provide 'aichat-openai)
 
 ;;; aichat-openai.el ends here

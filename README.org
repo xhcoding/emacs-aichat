@@ -163,6 +163,21 @@ Currently only tested http proxy, set =aichat-openai-proxy= as proxy address, fo
 *** Assistant
 
 - =aichat-openai-assistant= : Send the selected region or the input content, and the returned result is displayed in the Buffer defined by =aichat-openai-assistant-buffer=
+- =aichat-openai-replace-or-insert= : Send the selected region or the input content, and replace the selected region or insert at the current position with the returned result
+
+*** Customized fixed questioning approach.
+
+Use =aichat-openai-prompt-create= to create a fixed way of asking questions, such as:
+
+#+begin_src elisp
+  (aichat-openai-prompt-create "translator"
+                               :input-prompt "Please translate: "
+                               :text-format "Please identify the language I am speaking. If it is Chinese, please translate it into English; if it is not Chinese, please translate it into Chinese. Your answer must only contain the translated content. The following is the sentence I want to translate:\n%s"
+                               :assistant t
+                               :replace-or-insert t)
+#+end_src
+
+The above configuration will generate two functions: =aichat-openai-assistant-translator=, and =aichat-openai-replace-or-insert-translator=, which have the same effect as the above three commands, but the content of the query will be in the format of =text-format=.
 
 *** Options
 

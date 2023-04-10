@@ -114,7 +114,7 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
                                :replace-or-insert t)
 #+end_src
 
-上面这个配置会生成三个函数：  =aichat-bingai-chat-translator= , =aichat-bingai-assistant-translator= , =aichat-bingai-replace-or-insert-translator= ，效果和上面三个命令一样，只是提问的内容会按照 =text-format= 的格式。 
+上面这个配置会生成三个函数：  =aichat-bingai-chat-translator= , =aichat-bingai-assistant-translator= , =aichat-bingai-replace-or-insert-translator= ，效果和上面三个命令一样，只是提问的内容会按照 =text-format= 的格式。
 
 *** 选项
 
@@ -160,6 +160,22 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 *** 助手模式
 
 - =aichat-openai-assistant= : 发送选中区域或输入内容，将结果显示在 =aichat-openai-assistant-buffer= 中
+- =aichat-openai-replace-or-insert= : 发送选中区域或者输入的内容，将返回的结果替代选中区域或者插入当前位置
+
+*** 自定义固定提问方式
+
+使用 =aichat-openai-prompt-create= 创建一个固定的提问方式，比如：
+
+#+begin_src elisp
+  (aichat-openai-prompt-create "translator"
+                               :input-prompt "请翻译: "
+                               :text-format "请识别我说的语言，如果我说的语言是中文，请把它翻译成英文；如果我说的语言不是中文，请把它翻译成中文。你的返回内容必须是翻译后的文本，不能包括其它内容:\n%s"
+                               :assistant t
+                               :replace-or-insert t)
+#+end_src
+
+上面这个配置会生成两个函数: =aichat-openai-assistant-translator= , =aichat-openai-replace-or-insert-translator= ，效果和上面两个命令一样，只是提问的内容会按照 =text-format= 的格式。
+
 
 *** 选项
 
@@ -169,7 +185,7 @@ emacs-aichat 通过 =auth-source-pick-first-password= 获取 AppKey ，将你的
 - =aichat-openai-chat-directory= : 存放聊天文件的目录
 - =aichat-openai-chat-display-function= : 显示聊天 buffer 的函数
 
-  
+
 * 反馈问题
 
 要反馈你的问题，请按照以下步骤操作：
