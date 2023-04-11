@@ -569,7 +569,7 @@ Call resolve when the handshake with chathub passed."
           (when-let* ((name (concat (car (last (split-string (car (split-string url "?")) "/"))) ".jpeg"))
                       (filepath (expand-file-name name (temporary-file-directory)))
                       (output (await (aichat-bingai--shell-command (format "%s --silent \"%s\" --output %s" aichat-curl-program url filepath)))))
-            (push filepath paths)))
+            (push (cons url filepath) paths)))
         (funcall resolve paths))
     (error (funcall reject error))))
 
@@ -925,8 +925,8 @@ NEW-P is t, which means it is a new conversation."
                           (save-mark-and-excursion
                             (mapc (lambda (path)
                                     (if (derived-mode-p 'org-mode)
-                                        (insert (format "\n[[file:%s]] \n" path))
-                                      (insert (format "\n![%s](%s) \n" image-prompt path))))
+                                        (insert (format "\n[[file:%s]] \n" (cdr path)))
+                                      (insert (format "\n![%s](%s) \n" (car path) (cdr path)))))
                                   paths))
                           (if (derived-mode-p 'org-mode)
                               (org-display-inline-images)
