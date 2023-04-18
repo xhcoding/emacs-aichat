@@ -430,22 +430,21 @@ Call resolve when the handshake with chathub passed."
       (websocket-close chathub))))
 
 (defun aichat-bingai--reply-options (style)
-  (vector
+  (apply
+   #'vector
    "nlu_direct_response_filter"
    "deepleo"
    "disable_emoji_spoken_text"
    "responsible_ai_policy_2235"
    "enablemm"
-   "cachewriteext"
-   "e2ecachewrite"
-   "serploc"
-   "dl_edge_prompt"
+   "enbcdxpgpsr2"
+   "dllatex"
    "dv3sugg"
    "gencontentv3"
    (pcase style
-     ('creative "h3imaginative")
-     ('balanced "harmonyv3")
-     ('precise "h3precise"))))
+     ('creative (list "h3imaginative" "clgalileo"))
+     ('balanced (list "galileo"))
+     ('precise (list "h3precise" "clgalileo")))))
 
 (defconst aichat-bingai--allowed-message-types
   [
@@ -459,6 +458,31 @@ Call resolve when the handshake with chathub passed."
    "GenerateContentQuery"
    "SearchQuery"
    ])
+
+(defconst aichat-bingai--slice-ids
+  [
+   "winmuid1tf"
+   "contctxp2tf"
+   "ssoverlap50"
+   "sspltop5"
+   "sswebtop1"
+   "audrngon"
+   "audseq"
+   "nopreloadsscf"
+   "winmsgcf"
+   "creatgoglc"
+   "creatorv2t"
+   "wintone1cf"
+   "0415bficon"
+   "414suggs0"
+   "scctl"
+   "407pgparser"
+   "0329resps0"
+   "185latex"
+   "udscahrfon"
+   "udstrblm4"
+   "403recansgnds0"
+   "403tvlgnds0"])
 
 (defun aichat-bingai--make-request (session text style allowed-message-types options-sets)
   (unless allowed-message-types
@@ -474,6 +498,7 @@ Call resolve when the handshake with chathub passed."
                          (list :source "cib"
                                :optionsSets options-sets
                                :allowedMessageTypes (vconcat allowed-message-types ["Disengaged"])
+                               :sliceIds aichat-bingai--slice-ids
                                :spokenTextMode: "None"
                                :isStartOfSession (if (= 0 invocation-id)
                                                      t
@@ -626,7 +651,7 @@ Call resolve when the handshake with chathub passed."
         (lambda (resolve reject)
           (aichat-bingai--image-polling request-id prompt resolve reject)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; bingai API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun aichat-bingai-conversationing-p ()
   "Whether conversation or not."
