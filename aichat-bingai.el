@@ -616,7 +616,7 @@ Call resolve when the handshake with chathub passed."
                                        :data "")))
     (if (not (string= "302" (caar response)))
         (error (format "Image create: %s" response))
-      (setq location (alist-get "Location" (cadr response) nil nil 'equal))
+      (setq location (aichat-read-header-value "Location" (cadr response)))
       (setq redirect-url (concat "https://www.bing.com" (replace-regexp-in-string "&nfy=1" "" location)))
       (setq request-id (cadr (split-string redirect-url "id=")))
       (setq response (await (aichat-http redirect-url

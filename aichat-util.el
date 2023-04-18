@@ -167,8 +167,13 @@
       (buffer-substring (region-beginning) (region-end))
     (read-string input-prompt)))
 
+(defun aichat-read-header-value (header-key headers-alist)
+  "Read header value with HEADER-KEY in HEADERS-ALIST."
+  (alist-get header-key headers-alist nil nil '(lambda (o1 o2)
+                                                 (string= (downcase o1) (downcase o2)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; JSON utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; JSON utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro aichat-json-serialize (params)
   "Serialize object to json string."
@@ -1326,9 +1331,7 @@ DATA          (string)   data to be sent to the server
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('headers
                                               (unless (string= "text/event-stream" 
-                                                               (alist-get "Content-Type" data nil nil 
-                                                                          '(lambda (o1 o2)
-                                                                             (string= (downcase o1) (downcase o2)))))
+                                                               (aichat-read-header-value "Content-Type" data))
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('body
                                               (let ((buffer (concat (alist-get 'event-buffer aichat--http-callback-data) data))
