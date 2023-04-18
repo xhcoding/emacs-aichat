@@ -302,8 +302,9 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                (insert delta-content)))))))
    :on-success (lambda (_)
                  (when (buffer-live-p buffer)
-                   (goto-char (point-max))
-                   (insert "\n\n# User\n\n")))
+                   (with-current-buffer buffer
+                     (goto-char (point-max))
+                     (insert "\n\n# User\n\n"))))
    :on-error (lambda (err)
                (message "error: %s"err))))
 
@@ -347,8 +348,10 @@ Look https://platform.openai.com/docs/api-reference/chat for more request params
                              (completing-read "Select buffer: " opened-buffers))
                          (when-let* ((name
                                       (completing-read "Chat name: "
-                                                       (directory-files aichat-openai-chat-directory nil
-                                                                        "^\\([^.]\\|\\.[^.]\\|\\.\\..\\)")))
+                                                       (if (file-exists-p aichat-openai-chat-directory)
+                                                           (directory-files aichat-openai-chat-directory nil
+                                                                            "^\\([^.]\\|\\.[^.]\\|\\.\\..\\)")
+                                                         (list))))
                                      (filename (expand-file-name (if (string-suffix-p ".aichat" name) name
                                                                    (concat name ".aichat"))
                                                                  aichat-openai-chat-directory)))

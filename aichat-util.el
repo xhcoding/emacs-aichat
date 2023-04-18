@@ -1201,7 +1201,7 @@ CALLBACK      (string)   callbacl to receive reported http data.
     (setq url (concat url (if (string-match-p "\\?" url) "&" "?")
                       (aichat--http-urlencode-alist params))))
   (promise-new (lambda (resolve reject)
-                 (let* ((command (append (list aichat-curl-program "--silent" "--show-error" "--include")
+                 (let* ((command (append (list aichat-curl-program "--silent" "--show-error" "--include" "--no-styled-output")
                                          (when callback
                                            (list "--no-buffer"))
                                          (list "--config" "-")))
@@ -1325,7 +1325,10 @@ DATA          (string)   data to be sent to the server
                                               (unless (string= "200" (car data))
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('headers
-                                              (unless (string= "text/event-stream" (alist-get "Content-Type" data nil nil 'equal))
+                                              (unless (string= "text/event-stream" 
+                                                               (alist-get "Content-Type" data nil nil 
+                                                                          '(lambda (o1 o2)
+                                                                             (string= (downcase o1) (downcase o2)))))
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('body
                                               (let ((buffer (concat (alist-get 'event-buffer aichat--http-callback-data) data))
