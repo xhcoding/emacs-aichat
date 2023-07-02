@@ -1319,7 +1319,7 @@ DATA          (string)   data to be sent to the server
                              :params params
                              :headers headers
                              :data data
-                             :callback-data `((handle-data-p . t)
+                             :callback-data `((handle-data-p . ,t)
                                               (event-buffer . nil)
                                               (event-callback . ,callback))
                              :callback (lambda (status data)
