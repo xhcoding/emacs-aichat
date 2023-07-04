@@ -219,7 +219,7 @@ Re-fetching cookies from `aichat-bing--domain'"
   (unless (aichat-bingai--login-p)
     (await (aichat-bingai--refresh-cookies))))
 
-(defconst aichat-bingai--create-conversation-url "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
+(defconst aichat-bingai--create-conversation-url "https://www.bing.com/turing/conversation/create"
   "The url of create conversation.")
 
 (defconst aichat-bingai--conversation-headers
@@ -227,7 +227,7 @@ Re-fetching cookies from `aichat-bing--domain'"
     ("accept" . "application/json")
     ("accept-language" . "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
     ("content-type" . "application/json")
-    ("referer" . "https://edgeservices.bing.com/edgesvc/chat")
+    ("referer" . "https://www.bing.com/search?q=Bing+AI&showconv=1")
     ("sec-ch-ua" . "\"Microsoft Edge\"=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"")
     ("sec-ch-ua-mobile" . "?0")
     ("sec-ch-ua-platform" . "\"Windows\"")
@@ -437,14 +437,18 @@ Call resolve when the handshake with chathub passed."
    "disable_emoji_spoken_text"
    "responsible_ai_policy_2235"
    "enablemm"
-   "enbcdxpgpsr2"
-   "dllatex"
+   "iycapbing"
+   "iyxapbing"
+   "refpromptv1"
+   "enuaug"
    "dv3sugg"
-   "gencontentv3"
+   "autosave"
+   "iyoloxap"
+   "iyoloneutral"
    (pcase style
-     ('creative (list "h3imaginative" "clgalileo"))
-     ('balanced (list "galileo"))
-     ('precise (list "h3precise" "clgalileo")))))
+     ('creative (list "h3imaginative" "clgalileo" "gencontentv3"))
+     ('balanced (list "galileo" "saharagenconv5"))
+     ('precise (list "h3precise" "clgalileo" "gencontentv3")))))
 
 (defconst aichat-bingai--allowed-message-types
   [
@@ -461,28 +465,18 @@ Call resolve when the handshake with chathub passed."
 
 (defconst aichat-bingai--slice-ids
   [
-   "winmuid1tf"
-   "contctxp2tf"
-   "ssoverlap50"
-   "sspltop5"
-   "sswebtop1"
-   "audrngon"
-   "audseq"
-   "nopreloadsscf"
-   "winmsgcf"
-   "creatgoglc"
-   "creatorv2t"
-   "wintone1cf"
-   "0415bficon"
-   "414suggs0"
-   "scctl"
-   "407pgparser"
-   "0329resps0"
-   "185latex"
-   "udscahrfon"
-   "udstrblm4"
-   "403recansgnds0"
-   "403tvlgnds0"])
+   "winmuid3tf"
+   "anssupltmrd1"
+   "imgchatgptv2"
+   "bingsr3-v1"
+   "revpayaad"
+   "winstmsg2tf"
+   "602refusal"
+   "621alllocs0"
+   "621docxfmtho"
+   "330uaug"
+   "0626snptrcs0"
+   "424dagslnv1s0"])
 
 (defun aichat-bingai--make-request (session text style allowed-message-types options-sets)
   (unless allowed-message-types
