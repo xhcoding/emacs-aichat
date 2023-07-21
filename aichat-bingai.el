@@ -1173,6 +1173,8 @@ NEW-P is t, which means it is a new conversation."
   (when (and text (not (string-empty-p text)))
     (aichat-bingai-conversation text
                                 :style style
+                                :allowed-message-types ["Chat"
+                                                        "GenerateContentQuery"]
                                 :on-success (lambda (msg)
                                               (when-let ((content (aichat-bingai-message-type-2-text msg))
                                                          (buffer (aichat-bingai-assistant-get-buffer)))
@@ -1180,7 +1182,28 @@ NEW-P is t, which means it is a new conversation."
                                                   (goto-char (point-max))
                                                   (insert content)
                                                   (insert "\n\n"))
-                                                (funcall aichat-bingai-assistant-display-function buffer)))
+                                                (let ((image-prompt (aichat-bingai-message-type-2-image-prompt msg)))
+                                                  (if (not image-prompt)
+                                                      (funcall aichat-bingai-assistant-display-function buffer)
+                                                    (promise-then (aichat-bingai--image-create image-prompt)
+                                                                  (lambda (paths)
+                                                                    (when paths
+                                                                      (with-current-buffer buffer
+                                                                        (markdown-mode)
+                                                                        (goto-char (point-max))
+                                                                        (save-mark-and-excursion
+                                                                          (mapc (lambda (path)
+                                                                                  (if (derived-mode-p 'org-mode)
+                                                                                      (insert (format "\n[[file:%s]] \n" (cdr path)))
+                                                                                    (insert (format "\n![%s](%s) \n" (car path) (cdr path)))))
+                                                                                paths))
+                                                                        (if (derived-mode-p 'org-mode)
+                                                                            (org-display-inline-images)
+                                                                          (markdown-display-inline-images))))
+                                                                    (funcall aichat-bingai-assistant-display-function buffer))
+                                                                  (lambda (err)
+                                                                    (message "Image create error: %s" err)
+                                                                    (funcall aichat-bingai-assistant-display-function buffer)))))))
                                 :on-error (lambda (err)
                                             (message "Error: %s" err)))))
 
