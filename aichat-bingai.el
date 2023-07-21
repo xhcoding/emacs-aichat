@@ -80,6 +80,7 @@
 ;;
 
 ;;; Require
+(require 'gnutls)
 (require 'websocket)
 
 (require 'aichat-util)
@@ -113,7 +114,164 @@ When you set this value, bingai will login to www.bing.com through the cookies i
   :group 'aichat-bingai
   :type 'string)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Internal ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; websocket ;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun aichat-bingai--create-proxy-connection(name proxy-host proxy-port server-host server-port use-ssl)
+  (let ((conn)
+        (finished))
+    (setq conn (make-network-process
+                :name name
+                :buffer nil
+                :host proxy-host
+                :service proxy-port
+                :filter (lambda (proc data)
+                          (setq finished t))))
+    (process-send-string
+     conn
+     (format "CONNECT %s:%s HTTP/1.1\r\nHost: %s:%s\r\nProxy-Connection: Keep-Alive\r\n\r\n"
+             server-host server-port server-host server-port))
+    (while (not finished)
+      (accept-process-output conn 0.2))
+    (when use-ssl
+      (setq conn (gnutls-negotiate :process conn :hostname server-host)))
+    conn))
+
+(cl-defun aichat-bingai--websocket-open (url &key protocols extensions (on-open 'identity)
+                                             (on-message (lambda (_w _f))) (on-close 'identity)
+                                             (on-error 'websocket-default-error-handler)
+                                             (nowait nil) (custom-header-alist nil)
+                                             (proxy nil))
+  "Open a websocket connection to URL, returning the `websocket' struct.
+The PROTOCOL argument is optional, and setting it will declare to
+the server that this client supports the protocols in the list
+given.  We will require that the server also has to support that
+protocols.
+
+Similar logic applies to EXTENSIONS, which is a list of conses,
+the car of which is a string naming the extension, and the cdr of
+which is the list of parameter strings to use for that extension.
+The parameter strings are of the form \"key=value\" or \"value\".
+EXTENSIONS can be NIL if none are in use.  An example value would
+be (\"deflate-stream\" . (\"mux\" \"max-channels=4\")).
+
+Cookies that are set via `url-cookie-store' will be used during
+communication with the server, and cookies received from the
+server will be stored in the same cookie storage that the
+`url-cookie' package uses.
+
+Optionally you can specify
+ON-OPEN, ON-MESSAGE and ON-CLOSE callbacks as well.
+
+The ON-OPEN callback is called after the connection is
+established with the websocket as the only argument.  The return
+value is unused.
+
+The ON-MESSAGE callback is called after receiving a frame, and is
+called with the websocket as the first argument and
+`websocket-frame' struct as the second.  The return value is
+unused.
+
+The ON-CLOSE callback is called after the connection is closed, or
+failed to open.  It is called with the websocket as the only
+argument, and the return value is unused.
+
+The ON-ERROR callback is called when any of the other callbacks
+have an error.  It takes the websocket as the first argument, and
+a symbol as the second argument either `on-open', `on-message',
+or `on-close', and the error as the third argument. Do NOT
+rethrow the error, or else you may miss some websocket messages.
+You similarly must not generate any other errors in this method.
+If you want to debug errors, set
+`websocket-callback-debug-on-error' to t, but this also can be
+dangerous is the debugger is quit out of.  If not specified,
+`websocket-default-error-handler' is used.
+
+For each of these event handlers, the client code can store
+arbitrary data in the `client-data' slot in the returned
+websocket.
+
+The following errors might be thrown in this method or in
+websocket processing, all of them having the error-condition
+`websocket-error' in addition to their own symbol:
+
+`websocket-unsupported-protocol': Data in the error signal is the
+protocol that is unsupported.  For example, giving a URL starting
+with http by mistake raises this error.
+
+`websocket-wss-needs-emacs-24': Trying to connect wss protocol
+using Emacs < 24 raises this error.  You can catch this error
+also by `websocket-unsupported-protocol'.
+
+`websocket-received-error-http-response': Data in the error
+signal is the integer error number.
+
+`websocket-invalid-header': Data in the error is a string
+describing the invalid header received from the server.
+
+`websocket-unparseable-frame': Data in the error is a string
+describing the problem with the frame.
+
+`nowait': If NOWAIT is true, return without waiting for the
+connection to complete.
+
+`custom-headers-alist': An alist of custom headers to pass to the
+server. The car is the header name, the cdr is the header value.
+These are different from the extensions because it is not related
+to the websocket protocol.
+"
+  (let* ((name (format "websocket to %s" url))
+         (url-struct (url-generic-parse-url url))
+         (key (websocket-genkey))
+         (coding-system-for-read 'binary)
+         (coding-system-for-write 'binary)
+         (conn (if (member (url-type url-struct) '("ws" "wss"))
+                   (let* ((type (if (equal (url-type url-struct) "ws")
+                                    'plain 'tls))
+                          (port (if (= 0 (url-port url-struct))
+                                    (if (eq type 'tls) 443 80)
+                                  (url-port url-struct)))
+                          (host (url-host url-struct)))
+                     (if proxy
+                         (let* ((proxy-segs (split-string proxy ":"))
+                                (proxy-host (nth 0 proxy-segs))
+                                (proxy-port (nth 1 proxy-segs))
+                                (use-ssl (eq type 'tls)))
+                           (aichat-bingai--create-proxy-connection
+                            name proxy-host proxy-port host port use-ssl))
+                       (if (eq type 'plain)
+                           (make-network-process :name name :buffer nil :host host
+                                                 :service port :nowait nowait)
+                         (condition-case-unless-debug nil
+                             (open-network-stream name nil host port :type type :nowait nowait)
+                           (wrong-number-of-arguments
+                            (signal 'websocket-wss-needs-emacs-24 (list "wss")))))))
+                 (signal 'websocket-unsupported-protocol (list (url-type url-struct)))))
+         (websocket (websocket-inner-create
+                     :conn conn
+                     :url url
+                     :on-open on-open
+                     :on-message on-message
+                     :on-close on-close
+                     :on-error on-error
+                     :protocols protocols
+                     :extensions (mapcar 'car extensions)
+                     :accept-string
+                     (websocket-calculate-accept key))))
+    (unless conn (error "Could not establish the websocket connection to %s" url))
+    (process-put conn :websocket websocket)
+    (set-process-filter conn
+                        (lambda (process output)
+                          (let ((websocket (process-get process :websocket)))
+                            (websocket-outer-filter websocket output))))
+    (set-process-sentinel
+     conn
+     (websocket-sentinel url conn key protocols extensions custom-header-alist nowait))
+    (set-process-query-on-exit-flag conn nil)
+    (websocket-ensure-handshake url conn key protocols extensions custom-header-alist nowait)
+    websocket))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Internal ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (async-defun aichat-bingai--start-process (program &rest args)
   "Async start process with PROGRAM and ARGS.
@@ -389,39 +547,41 @@ Call `user-cb' when a message arrives."
 Call resolve when the handshake with chathub passed."
   (promise-new
    (lambda (resolve reject)
-     (websocket-open aichat-bingai--chathub-url
-                     :custom-header-alist aichat-bingai--chathub-headers
-                     :on-open (lambda (ws)
-                                (aichat-debug "====== chathub opened ======")
-                                ;; send handshake
-                                (if (and ws (websocket-openp ws))
-                                    (websocket-send-text ws (concat (aichat-json-serialize
-                                                                     (list :protocol "json" :version 1))
-                                                                    aichat-bingai--chathub-message-delimiter))
-                                  (funcall reject "Chathub unexpected closed during handshake.")))
-                     :on-close (lambda (_ws)
-                                 (aichat-debug "====== chathub closed ======")
-                                 (if (not (aichat-bingai--session-chathub session))
-                                     (funcall reject "Chathub unexpected closed during handshake.")
-                                   (setf (aichat-bingai--session-chathub session) nil)
-                                   (when (aichat-bingai--session-replying session)
-                                     ;; close when replying
-                                     (setf (aichat-bingai--session-replying session) nil)
-                                     (when-let ((reject-func (aichat-bingai--session-reject session)))
-                                       (funcall  reject-func "Chathub closed unexpectedly during reply.")))))
-                     :on-message (lambda (ws frame)
-                                   (let ((text (websocket-frame-text frame)))
-                                     (condition-case error
-                                         (progn
-                                           (aichat-debug "Receive handshake response: %s" text)
-                                           (aichat-json-parse (car (split-string text aichat-bingai--chathub-message-delimiter)))
-                                           (aichat-bingai--chathub-send-heart ws)
-                                           (setf (websocket-on-message ws)
-                                                 (lambda (_ws frame)
-                                                   (aichat-bingai--chathub-parse-message session (websocket-frame-text frame))))
-                                           (setf (aichat-bingai--session-chathub session) ws)
-                                           (funcall resolve t))
-                                       (error (funcall reject error)))))))))
+     (aichat-bingai--websocket-open
+      aichat-bingai--chathub-url
+      :proxy aichat-bingai-proxy
+      :custom-header-alist aichat-bingai--chathub-headers
+      :on-open (lambda (ws)
+                 (aichat-debug "====== chathub opened ======")
+                 ;; send handshake
+                 (if (and ws (websocket-openp ws))
+                     (websocket-send-text ws (concat (aichat-json-serialize
+                                                      (list :protocol "json" :version 1))
+                                                     aichat-bingai--chathub-message-delimiter))
+                   (funcall reject "Chathub unexpected closed during handshake.")))
+      :on-close (lambda (_ws)
+                  (aichat-debug "====== chathub closed ======")
+                  (if (not (aichat-bingai--session-chathub session))
+                      (funcall reject "Chathub unexpected closed during handshake.")
+                    (setf (aichat-bingai--session-chathub session) nil)
+                    (when (aichat-bingai--session-replying session)
+                      ;; close when replying
+                      (setf (aichat-bingai--session-replying session) nil)
+                      (when-let ((reject-func (aichat-bingai--session-reject session)))
+                        (funcall  reject-func "Chathub closed unexpectedly during reply.")))))
+      :on-message (lambda (ws frame)
+                    (let ((text (websocket-frame-text frame)))
+                      (condition-case error
+                          (progn
+                            (aichat-debug "Receive handshake response: %s" text)
+                            (aichat-json-parse (car (split-string text aichat-bingai--chathub-message-delimiter)))
+                            (aichat-bingai--chathub-send-heart ws)
+                            (setf (websocket-on-message ws)
+                                  (lambda (_ws frame)
+                                    (aichat-bingai--chathub-parse-message session (websocket-frame-text frame))))
+                            (setf (aichat-bingai--session-chathub session) ws)
+                            (funcall resolve t))
+                        (error (funcall reject error)))))))))
 
 (defun aichat-bingai--close-chathub (session)
   "Close chathub websocket connection."
