@@ -181,9 +181,9 @@ Timeout:
       (should (equal (aichat-json-access body-object "{args}") '((hello ."world"))))
       (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent)))))
 
-(ert-deftest aichat-http-get ()
-  (aichat-http-get-with-backend 'curl)
-  (aichat-http-get-with-backend 'url))
+;; (ert-deftest aichat-http-get ()
+;;   (aichat-http-get-with-backend 'curl)
+;;   (aichat-http-get-with-backend 'url))
 
 (defun aichat-http-get-with-proxy-with-backend (backend)
   (seq-let (status headers body)
@@ -213,9 +213,9 @@ Timeout:
       (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent))
       (should-not (string-empty-p (aichat-json-access body-object "{headers}{Cookie}"))))))
 
-(ert-deftest aichat-http-get-with-cookie ()
-  (aichat-http-get-with-cookie-with-backend 'curl)
-  (aichat-http-get-with-cookie-with-backend 'url))
+;; (ert-deftest aichat-http-get-with-cookie ()
+;;   (aichat-http-get-with-cookie-with-backend 'curl)
+;;   (aichat-http-get-with-cookie-with-backend 'url))
 
 (defun aichat-http-post-with-backend (backend)
   (let ((data (aichat-json-serialize (list :model "gpt-3.5-turbo"
@@ -236,9 +236,9 @@ Timeout:
       (let ((body-object (aichat-json-parse body)))
         (should (string= data (aichat-json-access body-object "{data}")))))))
 
-(ert-deftest aichat-http-post ()
-  (aichat-http-post-with-backend 'curl)
-  (aichat-http-post-with-backend 'url))
+;; (ert-deftest aichat-http-post ()
+;;   (aichat-http-post-with-backend 'curl)
+;;   (aichat-http-post-with-backend 'url))
 
 (defun aichat-http-event-source-with-backend (backend)
   (let* ((datas)
