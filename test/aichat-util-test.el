@@ -160,6 +160,15 @@ Timeout:
     (should (string= "value" (aichat-json-access object "{keys}{key}")))
     (should (equal ["hello" 1] (aichat-json-access object "{others}")))))
 
+(ert-deftest aichat-get-cookies-from-file()
+  (let ((cookies (aichat-get-cookies-from-file (expand-file-name "test/cookies.json" (file-name-directory (locate-library "aichat-util"))))))
+    (cl-loop for cookie in cookies
+             do (let ((name (car cookie))
+                      (value (cadr cookie)))
+                  (when (string= name "_U")
+                    (should (string= value "invalid, do not use this")))))))
+
+
 (defun aichat-http-get-with-backend (backend)
   (seq-let (status headers body)
       (promise-wait-value
