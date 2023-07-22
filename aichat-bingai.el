@@ -272,97 +272,14 @@ to the websocket protocol.
     websocket))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Internal ;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(async-defun aichat-bingai--start-process (program &rest args)
-  "Async start process with PROGRAM and ARGS.
-
-Returns stdout on success, otherwise returns nil."
-  (condition-case reason
-      (car (await (promise:make-process-with-handler (cons program args) nil t)))
-    (error nil)))
-
-(async-defun aichat-bingai--shell-command (command &optional dir)
-  "Async run COMMAND in DIR or `default-directory'.
-
-Returns stdout on success, otherwise returns nil."
-  (aichat-debug "Shell command: %s in %s" command dir)
-  (condition-case reason
-      (let ((default-directory (or dir default-directory)))
-        (await (promise:make-shell-command command dir)))
-    (error nil)))
-
-(defconst aichat-bingai--domain "bing.com"
+(defconst aichat-bingai--domain ".bing.com"
   "Bing domain for retrieve cookies.")
-
-(async-defun aichat-bingai--check-deps ()
-  "Check if browser_cookie3 is installed."
-  (when-let ((installed (await (aichat-bingai--shell-command "python -c \"import browser_cookie3\""))))
-    t))
-
-(defun aichat-bingai--get-cookies-from-file (filename)
-  "Get `aichat-bingai--domain' cookies from FILENAME."
-  (when (file-exists-p filename)
-    (let ((cookies (aichat-json-parse-file filename)))
-      (mapcar (lambda (cookie)
-                (let ((name (alist-get 'name cookie))
-                      (value (alist-get 'value cookie))
-                      (expires (if (assq 'expirationDate cookie)
-                                   (format-time-string "%FT%T%z"
-                                                       (seconds-to-time
-                                                        (alist-get 'expirationDate cookie)))
-                                 nil))
-                      (domain (alist-get 'domain cookie))
-                      (localpart (alist-get 'path cookie))
-                      (secure (if (eq (alist-get 'secure cookie) :json-false)
-                                  nil
-                                t)))
-                  (list name value expires domain localpart secure)))
-              cookies))))
-
-(defconst aichat-bingai--get-cookies-script
-  "python -c \"import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires, c.domain, c.path, c.secure)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))\""
-  "Shell script for get www.bing.com cookies.")
-
-(async-defun aichat-bingai--get-cookies ()
-  "Get `aichat-bingai--domain' cookies."
-  (await nil)
-  (if aichat-bingai-cookies-file
-      (aichat-bingai--get-cookies-from-file aichat-bingai-cookies-file)
-    (if (not (await (aichat-bingai--check-deps)))
-        (message "Please install browser_cookie3 by `pip3 install browser_cookie3`")
-      (when-let ((stdout (await
-                          (aichat-bingai--shell-command aichat-bingai--get-cookies-script))))
-        (mapcar (lambda (line)
-                  (let* ((fields (split-string line " " t))
-                         (name (nth 0 fields))
-                         (value (nth 1 fields))
-                         (expires (if (string= (nth 2 fields) "None")
-                                      nil
-                                    (format-time-string "%FT%T%z" (seconds-to-time (string-to-number (nth 2 fields))))))
-                         (domain (nth 3 fields))
-                         (localpart (nth 4 fields))
-                         (secure (if (string= (nth 5 fields) "1")
-                                     t
-                                   nil)))
-                    (list name value expires domain localpart secure)))
-                (split-string stdout "\n" t))))))
-
-(async-defun aichat-bingai--refresh-cookies ()
-  "Refresh `aichat-bing--domain' cookies.
-
-Delete all cookies from the cookie store where the domain matches `aichat-bing--domain'.
-Re-fetching cookies from `aichat-bing--domain'"
-  (when-let ((bing-cookies (await (aichat-bingai--get-cookies))))
-    (aichat-debug "bing-cookies:\n%s\n" bing-cookies)
-    (ignore-errors (url-cookie-delete-cookies aichat-bingai--domain))
-    (dolist (bing-cookie bing-cookies)
-      (apply #'url-cookie-store bing-cookie))))
 
 (defun aichat-bingai--login-p ()
   "Check if you're already login."
   (when-let* ((host-cookies
                (seq-find (lambda (host)
-                           (string= (car host) ".bing.com"))
+                           (string= (car host) aichat-bingai--domain))
                          (append url-cookie-secure-storage)))
               (user (seq-find
                      (lambda (cookie)
@@ -375,7 +292,7 @@ Re-fetching cookies from `aichat-bing--domain'"
   "Login `aichat-bingai--domain'."
   (await t)
   (unless (aichat-bingai--login-p)
-    (await (aichat-bingai--refresh-cookies))))
+    (await (aichat-refresh-cookies aichat-bingai--domain aichat-bingai-cookies-file))))
 
 (defconst aichat-bingai--create-conversation-url "https://www.bing.com/turing/conversation/create"
   "The url of create conversation.")
@@ -747,7 +664,7 @@ Call resolve when the handshake with chathub passed."
         (dolist (url urls)
           (when-let* ((name (concat (car (last (split-string (car (split-string url "?")) "/"))) ".jpeg"))
                       (filepath (expand-file-name name (temporary-file-directory)))
-                      (output (await (aichat-bingai--shell-command (format "%s --silent \"%s\" --output %s" aichat-curl-program url filepath)))))
+                      (output (await (aichat-shell-command (format "%s --silent \"%s\" --output %s" aichat-curl-program url filepath)))))
             (push (cons url filepath) paths)))
         (funcall resolve paths))
     (error (funcall reject error))))

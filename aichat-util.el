@@ -112,6 +112,22 @@
           (const :tag "curl" curl)
           (const :tag "url" url)))
 
+(defcustom aichat-browser-name 'edge
+  "Browser used by browser_cookie3."
+  :group 'aichat-bingai
+  :type '(radio
+          (const :tag "Chrome" chrome)
+          (const :tag "Firefox" firefox)
+          (const :tag "LibreWolf" librewolf)
+          (const :tag "Opera" opera)
+          (const :tag "Opera GX" opera_gx)
+          (const :tag "Edge" edge)
+          (const :tag "Chromium" chromium)
+          (const :tag "Brave" brave)
+          (const :tag "Vivaldi" vivaldi)
+          (const :tag "Safari" safari)))
+
+
 ;;;###autoload
 (defun aichat-toggle-debug ()
   "Toggle debug mode."
@@ -222,7 +238,104 @@
                     (setq res `(aref ,res ,(string-to-number (substring str (1+ start-pos) index))))))))
     res))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Process utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(async-defun aichat-start-process (program &rest args)
+  "Async start process with PROGRAM and ARGS.
+
+Returns stdout on success, otherwise returns nil."
+  (aichat-debug "Start process: %s with %s" program args)
+  (condition-case reason
+      (car (await (promise:make-process-with-handler (cons program args) nil t)))
+    (error nil)))
+
+(async-defun aichat-shell-command (command &optional dir)
+  "Async run COMMAND in DIR or `default-directory'.
+
+Returns stdout on success, otherwise returns nil."
+  (aichat-debug "Shell command: %s in %s" command dir)
+  (condition-case reason
+      (let ((default-directory (or dir default-directory)))
+        (await (promise:make-shell-command command dir)))
+    (error nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Cookie utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(async-defun aichat--check-deps ()
+  "Check if browser_cookie3 is installed."
+  (when-let ((installed (await (aichat-shell-command "python -c \"import browser_cookie3\""))))
+    t))
+
+(defun aichat-get-cookies-from-file (filename)
+  "Get cookies from FILENAME."
+  (when (file-exists-p filename)
+    (let ((cookies (aichat-json-parse-file filename)))
+      (mapcar (lambda (cookie)
+                (let ((name (alist-get 'name cookie))
+                      (value (alist-get 'value cookie))
+                      (expires (if (assq 'expirationDate cookie)
+                                   (format-time-string "%FT%T%z"
+                                                       (seconds-to-time
+                                                        (alist-get 'expirationDate cookie)))
+                                 nil))
+                      (domain (alist-get 'domain cookie))
+                      (localpart (alist-get 'path cookie))
+                      (secure (if (eq (alist-get 'secure cookie) :json-false)
+                                  nil
+                                t)))
+                  (list name value expires domain localpart secure)))
+              cookies))))
+
+(defun aichat--make-get-cookies-command(domain browser-name)
+  "Make shell command with `domain' and `browser-name'."
+  (format
+   "python -c \"import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires, c.domain, c.path, c.secure)), filter(lambda c: c.domain in ('%s'), browser_cookie3.%s(domain_name='%s'))))\""
+   domain
+   browser-name
+   domain))
+
+(async-defun aichat-get-cookies-from-shell (domain browser-name)
+  "Get cookies from shell command with browser_cookie3."
+  (if (not (await (aichat--check-deps)))
+      (message "Please install browser_cookie3 by `pip3 install browser_cookie3`")
+    (when-let ((stdout (await
+                        (aichat-shell-command
+                         (aichat--make-get-cookies-command domain browser-name)))))
+      (mapcar (lambda (line)
+                (let* ((fields (split-string line " " t))
+                       (name (nth 0 fields))
+                       (value (nth 1 fields))
+                       (expires (if (string= (nth 2 fields) "None")
+                                    nil
+                                  (format-time-string "%FT%T%z" (seconds-to-time (string-to-number (nth 2 fields))))))
+                       (domain (nth 3 fields))
+                       (localpart (nth 4 fields))
+                       (secure (if (string= (nth 5 fields) "1")
+                                   t
+                                 nil)))
+                  (list name value expires domain localpart secure)))
+              (split-string stdout "\n" t)))))
+
+(async-defun aichat-get-cookies (domain &optional cookie-file)
+  "If `cookie-file' is non-nil, get cookies from `cookie-file', otherwise get cookies from shell."
+  (await nil)
+  (if cookie-file
+      (aichat-get-cookies-from-file cookie-file)
+    (await (aichat-get-cookies-from-shell domain aichat-browser-name))))
+
+(async-defun aichat-refresh-cookies (domain &optional cookie-file)
+  "Refresh `domain' cookies.
+
+Delete all cookies from the cookie store where the domain matches `domain'.
+Re-fetching cookies from `domain'"
+  (when-let ((cookies (await (aichat-get-cookies domain cookie-file))))
+    (aichat-debug "%s cookies:\n%s\n" domain cookies)
+    (ignore-errors (url-cookie-delete-cookies domain))
+    (dolist (cookie cookies)
+      (apply #'url-cookie-store cookie))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HTTP utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst aichat--http-response-status-line-regexp
   (rx "HTTP/" (group (or "1.0" "1.1" "2")) " "
@@ -1330,7 +1443,7 @@ DATA          (string)   data to be sent to the server
                                               (unless (string= "200" (car data))
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('headers
-                                              (unless (string= "text/event-stream" 
+                                              (unless (string= "text/event-stream"
                                                                (aichat-read-header-value "Content-Type" data))
                                                 (setf (alist-get 'handle-data-p aichat--http-callback-data) nil)))
                                              ('body
