@@ -292,7 +292,9 @@ to the websocket protocol.
   "Login `aichat-bingai--domain'."
   (await t)
   (unless (aichat-bingai--login-p)
-    (await (aichat-refresh-cookies aichat-bingai--domain aichat-bingai-cookies-file))))
+    (await (aichat-refresh-cookies aichat-bingai--domain aichat-bingai-cookies-file))
+    (unless (aichat-bingai--login-p)
+      (error "Can not get correct cookie for login!"))))
 
 (defconst aichat-bingai--create-conversation-url "https://www.bing.com/turing/conversation/create"
   "The url of create conversation.")
