@@ -127,6 +127,14 @@ Timeout:
 
 ;;; Code:
 
+(defun aichat-util-test-create-server-proc ()
+  (let* ((datas)
+         (server-file (expand-file-name "test/server.js" (file-name-directory (locate-library "aichat-util"))))
+         (proc (start-process "event-server" nil "node" server-file)))
+    (when proc
+      (sleep-for 2)
+      proc)))
+
 (ert-deftest aichat-debug ()
   (let ((buffer-name "*AICHAT-DEBUG*")
         (msg "debug message"))
@@ -170,20 +178,22 @@ Timeout:
 
 
 (defun aichat-http-get-with-backend (backend)
-  (seq-let (status headers body)
-      (promise-wait-value
-       (promise-wait 100
-         (aichat-http "https://httpbin.org/get"
-                      :backend backend
-                      :params '(("hello". "world")))))
-    (should (string= "200" (car status)))
-    (let ((body-object (aichat-json-parse body)))
-      (should (equal (aichat-json-access body-object "{args}") '((hello ."world"))))
-      (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent)))))
+  (let ((proc (aichat-util-test-create-server-proc)))
+    (seq-let (status headers body)
+        (promise-wait-value
+         (promise-wait 100
+           (aichat-http "http://127.0.0.1:12345/get"
+                        :backend backend
+                        :params '(("hello". "world")))))
+      (should (string= "200" (car status)))
+      (let ((body-object (aichat-json-parse body)))
+        (should (equal (aichat-json-access body-object "{params}") '((hello ."world"))))
+        (should (string= (aichat-json-access body-object "{headers}{user-agent}") aichat-user-agent))))
+    (delete-process proc)))
 
-;; (ert-deftest aichat-http-get ()
-;;   (aichat-http-get-with-backend 'curl)
-;;   (aichat-http-get-with-backend 'url))
+(ert-deftest aichat-http-get ()
+  (aichat-http-get-with-backend 'curl)
+  (aichat-http-get-with-backend 'url))
 
 (defun aichat-http-get-with-proxy-with-backend (backend)
   (seq-let (status headers body)
@@ -201,32 +211,35 @@ Timeout:
 
 (defun aichat-http-get-with-cookie-with-backend (backend)
   (url-cookie-store "test" "aichat-http-get-with-cookie" nil "httpbin.org" "/" t)
-  (seq-let (status headers body)
-      (promise-wait-value
-       (promise-wait 100
-         (aichat-http "https://httpbin.org/get"
-                      :backend 'curl
-                      :params '(("hello". "world")))))
-    (should (string= "200" (car status)))
-    (let ((body-object (aichat-json-parse body)))
-      (should (equal (aichat-json-access body-object "{args}") '((hello ."world"))))
-      (should (string= (aichat-json-access body-object "{headers}{User-Agent}") aichat-user-agent))
-      (should-not (string-empty-p (aichat-json-access body-object "{headers}{Cookie}"))))))
+  (let ((proc (aichat-util-test-create-server-proc)))
+    (seq-let (status headers body)
+        (promise-wait-value
+         (promise-wait 100
+           (aichat-http "http://127.0.0.1:12345/get"
+                        :backend 'curl
+                        :params '(("hello". "world")))))
+      (should (string= "200" (car status)))
+      (let ((body-object (aichat-json-parse body)))
+        (should (equal (aichat-json-access body-object "{params}") '((hello ."world"))))
+        (should (string= (aichat-json-access body-object "{headers}{user-agent}") aichat-user-agent))
+        (should-not (string-empty-p (aichat-json-access body-object "{headers}{Cookie}")))))
+    (delete-process proc)))
 
-;; (ert-deftest aichat-http-get-with-cookie ()
-;;   (aichat-http-get-with-cookie-with-backend 'curl)
-;;   (aichat-http-get-with-cookie-with-backend 'url))
+(ert-deftest aichat-http-get-with-cookie ()
+  (aichat-http-get-with-cookie-with-backend 'curl)
+  (aichat-http-get-with-cookie-with-backend 'url))
 
 (defun aichat-http-post-with-backend (backend)
   (let ((data (aichat-json-serialize (list :model "gpt-3.5-turbo"
                                            :stream t
                                            :messages (vector
                                                       (list :role "user"
-                                                            :content "Hello, 我是你的助理" ))))))
+                                                            :content "Hello, 我是你的助理" )))))
+        (proc (aichat-util-test-create-server-proc)))
     (seq-let (status headers body)
         (promise-wait-value
          (promise-wait 100
-           (aichat-http "https://httpbin.org/post"
+           (aichat-http "http://127.0.0.1:12345/post"
                         :backend backend
                         :type "POST"
                         :headers '(("Content-Type" . "application/json")
@@ -234,26 +247,25 @@ Timeout:
                         :data data)))
       (should (string= "200" (car status)))
       (let ((body-object (aichat-json-parse body)))
-        (should (string= data (aichat-json-access body-object "{data}")))))))
+        (should (string= data (aichat-json-access body-object "{body}")))))
+    (delete-process proc)))
 
-;; (ert-deftest aichat-http-post ()
-;;   (aichat-http-post-with-backend 'curl)
-;;   (aichat-http-post-with-backend 'url))
+(ert-deftest aichat-http-post ()
+  (aichat-http-post-with-backend 'curl)
+  (aichat-http-post-with-backend 'url))
 
 (defun aichat-http-event-source-with-backend (backend)
   (let* ((datas)
-         (server-file (expand-file-name "test/server.js" (file-name-directory (locate-library "aichat-util"))))
-         (proc (start-process "event-server" nil "node" server-file)))
-    (when proc
-      (sleep-for 2)
-      (promise-wait 10 (aichat-http-event-source "http://127.0.0.1:12345/stream"
-                                                 (lambda (id data)
-                                                   (push (cons id data) datas))
-                                                 :backend backend))
-      (should (= 3 (length datas)))
-      (should (equal (cons "test" "this is data\nthis is new-line") (nth 0 datas)))
-      (should (equal (cons "test" "this is data\nthis is new-line") (nth 1 datas)))
-      (should (equal (cons "test" "this is data\nthis is new-line") (nth 2 datas))))))
+         (proc (aichat-util-test-create-server-proc)))
+    (promise-wait 10 (aichat-http-event-source "http://127.0.0.1:12345/stream"
+                                               (lambda (id data)
+                                                 (push (cons id data) datas))
+                                               :backend backend))
+    (should (= 3 (length datas)))
+    (should (equal (cons "test" "this is data\nthis is new-line") (nth 0 datas)))
+    (should (equal (cons "test" "this is data\nthis is new-line") (nth 1 datas)))
+    (should (equal (cons "test" "this is data\nthis is new-line") (nth 2 datas)))
+    (delete-process proc)))
 
 (ert-deftest aichat-http-event-source ()
   (aichat-http-event-source-with-backend 'curl)
