@@ -268,23 +268,24 @@ Returns stdout on success, otherwise returns nil."
 
 (defun aichat-get-cookies-from-file (filename)
   "Get cookies from FILENAME."
-  (when (file-exists-p filename)
-    (let ((cookies (aichat-json-parse-file filename)))
-      (mapcar (lambda (cookie)
-                (let ((name (alist-get 'name cookie))
-                      (value (alist-get 'value cookie))
-                      (expires (if (assq 'expirationDate cookie)
-                                   (format-time-string "%FT%T%z"
-                                                       (seconds-to-time
-                                                        (alist-get 'expirationDate cookie)))
-                                 nil))
-                      (domain (alist-get 'domain cookie))
-                      (localpart (alist-get 'path cookie))
-                      (secure (if (eq (alist-get 'secure cookie) :json-false)
-                                  nil
-                                t)))
-                  (list name value expires domain localpart secure)))
-              cookies))))
+  (if (file-exists-p filename)
+      (let ((cookies (aichat-json-parse-file filename)))
+        (mapcar (lambda (cookie)
+                  (let ((name (alist-get 'name cookie))
+                        (value (alist-get 'value cookie))
+                        (expires (if (assq 'expirationDate cookie)
+                                     (format-time-string "%FT%T%z"
+                                                         (seconds-to-time
+                                                          (alist-get 'expirationDate cookie)))
+                                   nil))
+                        (domain (alist-get 'domain cookie))
+                        (localpart (alist-get 'path cookie))
+                        (secure (if (eq (alist-get 'secure cookie) :json-false)
+                                    nil
+                                  t)))
+                    (list name value expires domain localpart secure)))
+                cookies))
+    (error "%s not exists" filename)))
 
 (defun aichat--make-get-cookies-command(domain browser-name)
   "Make shell command with `domain' and `browser-name'."
