@@ -954,6 +954,8 @@ NEW-P is t, which means it is a new conversation."
                                (aichat-bingai--chat-update-prompt chat text)))
       ("InternalLoaderMessage" (when-let ((text (aichat-bingai-message-type-1-text msg)))
                                  (aichat-bingai--chat-update-prompt chat text)))
+      ("InternalSearchResult"
+       nil)
       (_
        (when-let* ((text (aichat-bingai-message-type-1-text msg))
                    (replied-length (aichat-bingai--chat-replied-length chat))
