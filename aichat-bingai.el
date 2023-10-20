@@ -344,13 +344,15 @@ to the websocket protocol.
       (if (string-empty-p body)
           (error "Your network settings are preventing access to this feature.")
         (let* ((data (aichat-json-parse body))
-               (result-value (aichat-json-access data "{result}{value}")))
+               (result-value (aichat-json-access data "{result}{value}"))
+               (signature (cdr (seq-find (lambda (header) (string= (car header) "X-Sydney-EncryptedConversationSignature"))
+                                    headers))))
           (if (not (string= "Success" result-value))
               (error "Create conversation failed: %s" body)
             (aichat-bingai--conversation-new
              :id (aichat-json-access data "{conversationId}")
-             :signature (aichat-json-access data "{conversationSignature}")
-             :client-id (aichat-json-access data "{clientId}"))))))))
+             :client-id (aichat-json-access data "{clientId}")
+             :signature signature)))))))
 
 (cl-defstruct (aichat-bingai--session
                (:constructor aichat-bingai--session-new)
@@ -467,7 +469,8 @@ Call resolve when the handshake with chathub passed."
   (promise-new
    (lambda (resolve reject)
      (aichat-bingai--websocket-open
-      aichat-bingai--chathub-url
+      (concat aichat-bingai--chathub-url "?sec_access_token="
+              (url-hexify-string (aichat-bingai--conversation-signature (aichat-bingai--session-conversation session))))
       :proxy aichat-bingai-proxy
       :custom-header-alist aichat-bingai--chathub-headers
       :on-open (lambda (ws)
@@ -529,6 +532,13 @@ Call resolve when the handshake with chathub passed."
      ('balanced (list "galileo" "saharagenconv5"))
      ('precise (list "h3precise" "clgalileo" "gencontentv3")))))
 
+(defun aichat-bingai--tone (style)
+  (pcase style
+     ('creative "Creative")
+     ('balanced "Balanced")
+     ('precise "Precise"))
+  )
+
 (defconst aichat-bingai--allowed-message-types
   [
    "Chat"
@@ -572,6 +582,7 @@ Call resolve when the handshake with chathub passed."
                                :optionsSets options-sets
                                :allowedMessageTypes (vconcat allowed-message-types ["Disengaged"])
                                :sliceIds aichat-bingai--slice-ids
+                               :tone (aichat-bingai--tone style)
                                :spokenTextMode: "None"
                                :isStartOfSession (if (= 0 invocation-id)
                                                      t
@@ -580,7 +591,6 @@ Call resolve when the handshake with chathub passed."
                                               :inputMethod "Keyboard"
                                               :text text
                                               :messageType "Chat")
-                               :conversationSignature (aichat-bingai--conversation-signature conversation)
                                :participant (list :id (aichat-bingai--conversation-client-id conversation))
                                :conversationId (aichat-bingai--conversation-id conversation)))
                         :invocationId (number-to-string (aichat-bingai--session-invocation-id session))
