@@ -280,7 +280,7 @@ to the websocket protocol.
   (when-let* ((host-cookies
                (seq-find (lambda (host)
                            (string= (car host) aichat-bingai--domain))
-                         (append url-cookie-secure-storage)))
+                         (append url-cookie-secure-storage url-cookie-storage)))
               (user (seq-find
                      (lambda (cookie)
                        (string= (aref cookie 1) "_U"))

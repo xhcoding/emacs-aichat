@@ -113,7 +113,7 @@
           (const :tag "url" url)))
 
 (defcustom aichat-browser-name 'edge
-  "Browser used by browser_cookie3."
+  "Browser used by rookiepy."
   :group 'aichat-bingai
   :type '(radio
           (const :tag "Chrome" chrome)
@@ -262,8 +262,8 @@ Returns stdout on success, otherwise returns nil."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Cookie utils ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (async-defun aichat--check-deps ()
-  "Check if browser_cookie3 is installed."
-  (when-let ((installed (await (aichat-shell-command "python -c \"import browser_cookie3\""))))
+  "Check if rookiepy is installed."
+  (when-let ((installed (await (aichat-shell-command "python -c \"import rookiepy\""))))
     t))
 
 (defun aichat-get-cookies-from-file (filename)
@@ -289,16 +289,15 @@ Returns stdout on success, otherwise returns nil."
 
 (defun aichat--make-get-cookies-command(domain browser-name)
   "Make shell command with `domain' and `browser-name'."
-  (format
-   "python -c \"import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires, c.domain, c.path, c.secure)), filter(lambda c: c.domain in ('%s'), browser_cookie3.%s(domain_name='%s'))))\""
-   domain
-   browser-name
-   domain))
+  (format "python -c \"import rookiepy;list(map(lambda c: print('{} {} {} {} {} {}'.format(c['name'], c['value'], c['expires'], c['domain'], c['path'], c['secure'])), filter(lambda c: c['domain'] in ('%s'), rookiepy.%s(['%s']))))\""
+          domain
+          browser-name
+          domain))
 
 (async-defun aichat-get-cookies-from-shell (domain browser-name)
-  "Get cookies from shell command with browser_cookie3."
+  "Get cookies from shell command with rookiepy."
   (if (not (await (aichat--check-deps)))
-      (message "Please install browser_cookie3 by `pip3 install browser_cookie3`")
+      (message "Please install rookiepy by `pip3 install rookiepy`")
     (when-let ((stdout (await
                         (aichat-shell-command
                          (aichat--make-get-cookies-command domain browser-name)))))

@@ -64,11 +64,11 @@ emacs-aichat 获取浏览器的 cookie 登录 Bing Chat ，所以你需要先在
 
 **** 方式一
 
-如果你有 Python 环境，运行 =pip3 install browser_cookie3= 安装 =browser_cookie3= ，
+如果你有 Python 环境，运行 =pip3 install rookiepy= 安装 =rookiepy= ，
 然后打开终端，执行下面的代码：
 
 #+begin_src sh
-  python -c "import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires,c.domain, c.secure, c.path)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))"
+  python -c "import rookiepy;list(map(lambda c: print('{} {} {} {} {} {}'.format(c['name'], c['value'], c['expires'], c['domain'], c['path'], c['secure'])), filter(lambda c: c['domain'] in ('.bing.com'), rookiepy.edge(['.bing.com']))))" 
 #+end_src
 
 如果你能够看到输出，并且输出中有 =_U= 字段，那么你能够用这种方式登录成功。

@@ -66,11 +66,11 @@ There are two ways to get the browser's cookie, you can choose any convenient me
 
 **** Option one
 
-If you have a Python environment, run =pip3 install browser_cookie3= to install =browser_cookie3=, then open the terminal and execute the following code:
+If you have a Python environment, run =pip3 install rookiepy= to install =rookiepy=, then open the terminal and execute the following code:
 
 
 #+begin_src sh
-  python -c "import browser_cookie3;list(map(lambda c: print('{} {} {} {} {} {}'.format(c.name, c.value, c.expires,c.domain, c.secure, c.path)), filter(lambda c: c.domain in ('.bing.com', 'www.bing.com'), browser_cookie3.edge(domain_name='bing.com'))))"
+  python -c "import rookiepy;list(map(lambda c: print('{} {} {} {} {} {}'.format(c['name'], c['value'], c['expires'], c['domain'], c['path'], c['secure'])), filter(lambda c: c['domain'] in ('.bing.com'), rookiepy.edge(['.bing.com']))))" 
 #+end_src
 
 If you can see the output and there is a =_U= field in the output, then you can log in successfully with this method.
