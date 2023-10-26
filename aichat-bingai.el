@@ -345,7 +345,7 @@ to the websocket protocol.
           (error "Your network settings are preventing access to this feature.")
         (let* ((data (aichat-json-parse body))
                (result-value (aichat-json-access data "{result}{value}"))
-               (signature (cdr (seq-find (lambda (header) (string= (car header) "X-Sydney-EncryptedConversationSignature"))
+               (signature (cdr (seq-find (lambda (header) (string= (downcase (car header)) "x-sydney-encryptedconversationsignature"))
                                     headers))))
           (if (not (string= "Success" result-value))
               (error "Create conversation failed: %s" body)
