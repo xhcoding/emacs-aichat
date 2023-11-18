@@ -1,22 +1,70 @@
 {
   "type": 2,
-  "invocationId": "0",
+  "invocationId": "6",
   "item": {
     "messages": [
       {
-        "text": "翻译下面的句子，只返回翻译后的文本，不要有额外的内容：我想去旅游。",
+        "text": "如何判断链表的长度？",
         "author": "user",
         "from": {
           "id": "1055518581560278",
-          "name": null
+          "name": null,
+          "partnerId": null
         },
-        "createdAt": "2023-03-12T02:07:52.1045021+00:00",
-        "timestamp": "2023-03-12T02:07:52.0988909+00:00",
-        "locale": "en-us",
-        "market": "en-us",
-        "region": "us",
-        "messageId": "72a19064-e445-491d-97d1-bd03122e5537",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
+        "createdAt": "2023-11-18T04:05:13.1221273+00:00",
+        "timestamp": "2023-11-18T11:35:37+08:00",
+        "locale": "zh-CN",
+        "market": "zh-AU",
+        "region": "AU",
+        "location": "lat:47.639557;long:-122.128159;re=1000m;",
+        "locationInfo": {
+          "country": "澳洲",
+          "state": "New South Wales",
+          "city": "悉尼中央商务区",
+          "sourceType": 1
+        },
+        "locationHints": [
+          {
+            "countryConfidence": 9,
+            "dma": 0,
+            "sourceType": 1,
+            "utcOffset": 10,
+            "postCodeName": "2000",
+            "populatedPlaceConfidence": 9,
+            "populatedPlaceName": "Sydney",
+            "admin1Name": "New South Wales",
+            "countryName": "Australia",
+            "fdConfidence": 0.9,
+            "accuracy": 24902,
+            "name": "Sydney, New South Wales",
+            "radius": 24902,
+            "center": {
+              "latitude": -33.8683,
+              "longitude": 151.2082,
+              "height": null
+            },
+            "regionType": 2
+          }
+        ],
+        "userIpAddress": "2a11:3:200::108c",
+        "messageId": "77b13b73-8138-11f6-ff28-b0375509df59",
+        "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
+        "nlu": {
+          "scoredClassification": {
+            "classification": "DEEP_LEO",
+            "score": null
+          },
+          "classificationRanking": [
+            {
+              "classification": "DEEP_LEO",
+              "score": null
+            }
+          ],
+          "qualifyingClassifications": null,
+          "ood": null,
+          "metaData": null,
+          "entities": null
+        },
         "offense": "None",
         "feedback": {
           "tag": null,
@@ -24,17 +72,26 @@
           "type": "None"
         },
         "contentOrigin": "cib",
-        "privacy": null,
+        "scores": [
+          {
+            "component": "UserOffense",
+            "score": 0.00019260288
+          },
+          {
+            "component": "suicide_help",
+            "score": 0.016403032
+          }
+        ],
         "inputMethod": "Keyboard"
       },
       {
-        "text": "Searching the web for: `translate 我想去旅游 to English`",
-        "hiddenText": "translate 我想去旅游 to English",
+        "text": "Searching the web for: `如何判断链表的长度`",
+        "hiddenText": "如何判断链表的长度",
         "author": "bot",
-        "createdAt": "2023-03-12T02:07:54.6353908+00:00",
-        "timestamp": "2023-03-12T02:07:54.6353908+00:00",
-        "messageId": "71b86fe5-3863-48db-a7b2-389988f5c34f",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
+        "createdAt": "2023-11-18T04:05:17.5267446+00:00",
+        "timestamp": "2023-11-18T04:05:17.5267446+00:00",
+        "messageId": "ae3eb3f1-f874-4c8a-bea9-fa75e907c994",
+        "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
         "messageType": "InternalSearchQuery",
         "offense": "None",
         "adaptiveCards": [
@@ -49,7 +106,7 @@
                     "type": "TextRun",
                     "isSubtle": true,
                     "italic": true,
-                    "text": "Searching the web for: `translate 我想去旅游 to English`"
+                    "text": "Searching the web for: `如何判断链表的长度`"
                   }
                 ]
               }
@@ -62,15 +119,16 @@
           "type": "None"
         },
         "contentOrigin": "DeepLeo",
-        "privacy": null
+        "toolResultPublishPreference": "Never"
       },
       {
-        "hiddenText": "```json\n{\"translation_results\":[{\"index\":\"1\",\"data\":{\"SourceLanguage\":\"zh-Hans\",\"TargetLanguage\":\"en\",\"TranslatedText\":\"i want to travel\",\"OriginalText\":\"我想去旅游\",\"InputTransliteration\":\"\",\"OutputTransliteration\":\"\",\"Title\":\"Bing Translator\",\"TranslationUrl\":\"http://www.bing.com/translator/?ref=TThis&text=我想去旅游&from=zh-Hans&to=en\",\"alternateTranslations\":[]},\"url\":\"https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English\"}],\"web_search_results\":[{\"index\":\"2\",\"title\":\"Google Translate\",\"snippets\":[\"Google's service, offered free of charge, instantly translates words, phrases, and web pages between English and over 100 other languages.\"],\"url\":\"https://translate.google.com.bd/?hl=en\"},{\"index\":\"3\",\"title\":\"Google Translate\",\"snippets\":[\"Translate. Detect language → English. Google home; Send feedback; Privacy and terms; Switch to full site\"],\"url\":\"https://translate.google.com/m\"},{\"index\":\"4\",\"title\":\"\\\"I want to travel and relax a bit.\\\" - Duolingo\",\"snippets\":[\"Further to my previous reply, please also note that there is a special punctuation mark used in Chinese in a sentence like this. Duolingo has used a comma, but normally you would use a 、 which is called 頓號〔顿号〕dùnhào which Pleco defines as a “slight-pause mark used to set off items in a series.”\"],\"url\":\"https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit\"}]}\n```",
+        "text": "{\"question_answering_results\":[{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\"],\"url\":\"https://bing.com/search?q=%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e9%93%be%e8%a1%a8%e7%9a%84%e9%95%bf%e5%ba%a6\"}],\"web_search_results\":[{\"title\":\"Java LinkedList | 菜鸟教程\",\"snippets\":[\"Java LinkedList | 菜鸟教程 Java LinkedList Java 集合框架 链表（Linked list）是一种常见的基础数据结构，是一种线性表，但是并不会按线性的顺序存储数据，而是在每一个节点里存到下一个节点的地址。 链表可分为单向链表和双向链表。 一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。 LinkedList 实现了 Queue 接口，可作为队列使用。 LinkedList 实现了 List 接口，可进行列表的相关操作。 LinkedList 实现了 Deque 接口，可作为队列使用。 LinkedList 实现了 Cloneable 接口，可实现克隆。 LinkedList 实现了 java.io.Serializable 接口，即可支持序列化，能通过序列化去传输。 LinkedList 类位于 java.util 包中，使用前需要引入它，语法格式如下： // 引入 LinkedList 类 import java.util.LinkedList; LinkedList<E> list = new LinkedList<E> (); // 普通创建方法 或者 LinkedList<E> list = new LinkedList (Collection<? extends E> c); // 使用集合创建链表 创建一个简单的链表实例： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Weibo] 更多的情况下我们使用 ArrayList 访问列表中的随机元素更加高效，但以下几种情况 LinkedList 提供了更高效的方法。 在列表开头添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addFirst () 在头部添加元素 sites. addFirst(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Wiki, Google, Runoob, Taobao] 在列表结尾添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addLast () 在尾部添加元素 sites. addLast(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Wiki] 在列表开头移除元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeFirst(); System. out. println( sites); } } 以上实例，执行输出结果为： [Runoob, Taobao, Weibo] 在列表结尾移除元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeLast(); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao] 获取列表开头的元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites. getFirst()); } } 以上实例，执行输出结果为：\",\"一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。\"],\"url\":\"https://www.runoob.com/java/java-linkedlist.html\"},{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"C++程序 寻找链表长度|极客笔记 当前位置： 极客笔记 > C++ > C++ 示例 > C++程序 寻找链表长度 C++程序 寻找链表长度 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个 C ++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表定义示例，包含了节点的数据类型和链表的数据类型： struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } }; 计算链表长度 要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示： int getLengthRecursion(ListNode *node) { if (node == NULL) { return 0; } else { return 1 + getLengthRecursion(node->next); } } 函数中如果节点为空，则长度为0；否则不断递归到下一个节点，一直到最后一个节点，返回的是递归到该节点的长度+1。 使用示例 我们可以编写一个主函数，来验证计算链表长度的函数是否正确。 下面是一个使用示例，包含了链表的添加和输出功能，以及计算链表长度的功能： #include <iostream> using namespace std; struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } void addNode(int val) { if (head == NULL) { head = new ListNode(val); } else { ListNode *p = head; while (p->next != NULL) p = p->next; p->next = new ListNode(val); } } void printList() { ListNode *p = head; while (p != NULL) { cout << p->val << \\\" \\\"; p = p->next; } cout << endl; } }; int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } int main() { LinkedList list; list.addNode(1); list.addNode(2); list.addNode(3); list.addNode(4); list.addNode(5); list.printList(); cout << \\\"Length of the linked list: \\\" << getLength(&list) << endl; return 0; } 输出： 1 2 3 4 5 Length of the linked list: 5 结论 计算链表长度是一个简单而常用的操作，可以使用循环和递归两种方法来实现。 两种方法虽然代码不同，但本质相同，都是遍历整个链表，统计节点数量。 在实际应用中，要根据具体情况选择不同的方法。 上一篇 C++程序 查找两个链表交点 下一篇 C++程序 寻找给定和的子数组-第1集（非负数） Camera课程 API2 教程 Perf 教程 Native FW 教程 ISP 教程 Sensor 教程 Python教程 Python 教程 NumPy 教程 Django 教程 Java教程 Java 教程 Web教程 JavaScript 教程 jQuery 教程 CSS 教程 PHP 教程 Laravel 教程 TypeScript 教程 WordPress 教程 数据库教程 SQL 教程 SQLite 教程 MySQL 教程 PL/SQL 教程 MongoDB 教程 图形图像教程 OpenCV 教程 办公软件教程 Excel 教程 Linux教程 Linux命令全集 Linux内核API LVGL 教程 计算机教程 操作系统 教程 计算机网络 教程 C语言 教程 C++ 教程 Swift 教程 大数据教程 Hadoop 教程 Spark 教程 Scala 教程 开发工具教程 Git 教程 Jenkins 教程 ChatGPT 教程 IntelliJ 教程 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个C++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表\",\"下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\",\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示：\"],\"url\":\"https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html\"}]}",
+        "hiddenText": "search_web('如何判断链表的长度') was invoked and returned:\n```json\n{\"question_answering_results\":[{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\"],\"url\":\"https://bing.com/search?q=%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e9%93%be%e8%a1%a8%e7%9a%84%e9%95%bf%e5%ba%a6\"}],\"web_search_results\":[{\"title\":\"Java LinkedList | 菜鸟教程\",\"snippets\":[\"Java LinkedList | 菜鸟教程 Java LinkedList Java 集合框架 链表（Linked list）是一种常见的基础数据结构，是一种线性表，但是并不会按线性的顺序存储数据，而是在每一个节点里存到下一个节点的地址。 链表可分为单向链表和双向链表。 一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。 LinkedList 实现了 Queue 接口，可作为队列使用。 LinkedList 实现了 List 接口，可进行列表的相关操作。 LinkedList 实现了 Deque 接口，可作为队列使用。 LinkedList 实现了 Cloneable 接口，可实现克隆。 LinkedList 实现了 java.io.Serializable 接口，即可支持序列化，能通过序列化去传输。 LinkedList 类位于 java.util 包中，使用前需要引入它，语法格式如下： // 引入 LinkedList 类 import java.util.LinkedList; LinkedList<E> list = new LinkedList<E> (); // 普通创建方法 或者 LinkedList<E> list = new LinkedList (Collection<? extends E> c); // 使用集合创建链表 创建一个简单的链表实例： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Weibo] 更多的情况下我们使用 ArrayList 访问列表中的随机元素更加高效，但以下几种情况 LinkedList 提供了更高效的方法。 在列表开头添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addFirst () 在头部添加元素 sites. addFirst(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Wiki, Google, Runoob, Taobao] 在列表结尾添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addLast () 在尾部添加元素 sites. addLast(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Wiki] 在列表开头移除元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeFirst(); System. out. println( sites); } } 以上实例，执行输出结果为： [Runoob, Taobao, Weibo] 在列表结尾移除元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeLast(); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao] 获取列表开头的元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites. getFirst()); } } 以上实例，执行输出结果为：\",\"一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。\"],\"url\":\"https://www.runoob.com/java/java-linkedlist.html\"},{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"C++程序 寻找链表长度|极客笔记 当前位置： 极客笔记 > C++ > C++ 示例 > C++程序 寻找链表长度 C++程序 寻找链表长度 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个 C ++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表定义示例，包含了节点的数据类型和链表的数据类型： struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } }; 计算链表长度 要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示： int getLengthRecursion(ListNode *node) { if (node == NULL) { return 0; } else { return 1 + getLengthRecursion(node->next); } } 函数中如果节点为空，则长度为0；否则不断递归到下一个节点，一直到最后一个节点，返回的是递归到该节点的长度+1。 使用示例 我们可以编写一个主函数，来验证计算链表长度的函数是否正确。 下面是一个使用示例，包含了链表的添加和输出功能，以及计算链表长度的功能： #include <iostream> using namespace std; struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } void addNode(int val) { if (head == NULL) { head = new ListNode(val); } else { ListNode *p = head; while (p->next != NULL) p = p->next; p->next = new ListNode(val); } } void printList() { ListNode *p = head; while (p != NULL) { cout << p->val << \\\" \\\"; p = p->next; } cout << endl; } }; int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } int main() { LinkedList list; list.addNode(1); list.addNode(2); list.addNode(3); list.addNode(4); list.addNode(5); list.printList(); cout << \\\"Length of the linked list: \\\" << getLength(&list) << endl; return 0; } 输出： 1 2 3 4 5 Length of the linked list: 5 结论 计算链表长度是一个简单而常用的操作，可以使用循环和递归两种方法来实现。 两种方法虽然代码不同，但本质相同，都是遍历整个链表，统计节点数量。 在实际应用中，要根据具体情况选择不同的方法。 上一篇 C++程序 查找两个链表交点 下一篇 C++程序 寻找给定和的子数组-第1集（非负数） Camera课程 API2 教程 Perf 教程 Native FW 教程 ISP 教程 Sensor 教程 Python教程 Python 教程 NumPy 教程 Django 教程 Java教程 Java 教程 Web教程 JavaScript 教程 jQuery 教程 CSS 教程 PHP 教程 Laravel 教程 TypeScript 教程 WordPress 教程 数据库教程 SQL 教程 SQLite 教程 MySQL 教程 PL/SQL 教程 MongoDB 教程 图形图像教程 OpenCV 教程 办公软件教程 Excel 教程 Linux教程 Linux命令全集 Linux内核API LVGL 教程 计算机教程 操作系统 教程 计算机网络 教程 C语言 教程 C++ 教程 Swift 教程 大数据教程 Hadoop 教程 Spark 教程 Scala 教程 开发工具教程 Git 教程 Jenkins 教程 ChatGPT 教程 IntelliJ 教程 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个C++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表\",\"下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\",\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示：\"],\"url\":\"https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html\"}]}\n```",
         "author": "bot",
-        "createdAt": "2023-03-12T02:07:54.9227195+00:00",
-        "timestamp": "2023-03-12T02:07:54.9227195+00:00",
-        "messageId": "1f3ed69b-5649-4e9b-a3be-d29a5eeaa704",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
+        "createdAt": "2023-11-18T04:05:17.8441733+00:00",
+        "timestamp": "2023-11-18T04:05:17.8441733+00:00",
+        "messageId": "0fedf8a8-2d62-4f37-b3ce-f5378e798356",
+        "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
         "messageType": "InternalSearchResult",
         "offense": "None",
         "adaptiveCards": [
@@ -85,7 +143,7 @@
                     "type": "TextRun",
                     "isSubtle": true,
                     "italic": true,
-                    "text": "```json\n{\"translation_results\":[{\"index\":\"1\",\"data\":{\"SourceLanguage\":\"zh-Hans\",\"TargetLanguage\":\"en\",\"TranslatedText\":\"i want to travel\",\"OriginalText\":\"我想去旅游\",\"InputTransliteration\":\"\",\"OutputTransliteration\":\"\",\"Title\":\"Bing Translator\",\"TranslationUrl\":\"http://www.bing.com/translator/?ref=TThis&text=我想去旅游&from=zh-Hans&to=en\",\"alternateTranslations\":[]},\"url\":\"https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English\"}],\"web_search_results\":[{\"index\":\"2\",\"title\":\"Google Translate\",\"snippets\":[\"Google's service, offered free of charge, instantly translates words, phrases, and web pages between English and over 100 other languages.\"],\"url\":\"https://translate.google.com.bd/?hl=en\"},{\"index\":\"3\",\"title\":\"Google Translate\",\"snippets\":[\"Translate. Detect language → English. Google home; Send feedback; Privacy and terms; Switch to full site\"],\"url\":\"https://translate.google.com/m\"},{\"index\":\"4\",\"title\":\"\\\"I want to travel and relax a bit.\\\" - Duolingo\",\"snippets\":[\"Further to my previous reply, please also note that there is a special punctuation mark used in Chinese in a sentence like this. Duolingo has used a comma, but normally you would use a 、 which is called 頓號〔顿号〕dùnhào which Pleco defines as a “slight-pause mark used to set off items in a series.”\"],\"url\":\"https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit\"}]}\n```"
+                    "text": "{\"question_answering_results\":[{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\"],\"url\":\"https://bing.com/search?q=%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e9%93%be%e8%a1%a8%e7%9a%84%e9%95%bf%e5%ba%a6\"}],\"web_search_results\":[{\"title\":\"Java LinkedList | 菜鸟教程\",\"snippets\":[\"Java LinkedList | 菜鸟教程 Java LinkedList Java 集合框架 链表（Linked list）是一种常见的基础数据结构，是一种线性表，但是并不会按线性的顺序存储数据，而是在每一个节点里存到下一个节点的地址。 链表可分为单向链表和双向链表。 一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。 LinkedList 实现了 Queue 接口，可作为队列使用。 LinkedList 实现了 List 接口，可进行列表的相关操作。 LinkedList 实现了 Deque 接口，可作为队列使用。 LinkedList 实现了 Cloneable 接口，可实现克隆。 LinkedList 实现了 java.io.Serializable 接口，即可支持序列化，能通过序列化去传输。 LinkedList 类位于 java.util 包中，使用前需要引入它，语法格式如下： // 引入 LinkedList 类 import java.util.LinkedList; LinkedList<E> list = new LinkedList<E> (); // 普通创建方法 或者 LinkedList<E> list = new LinkedList (Collection<? extends E> c); // 使用集合创建链表 创建一个简单的链表实例： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Weibo] 更多的情况下我们使用 ArrayList 访问列表中的随机元素更加高效，但以下几种情况 LinkedList 提供了更高效的方法。 在列表开头添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addFirst () 在头部添加元素 sites. addFirst(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Wiki, Google, Runoob, Taobao] 在列表结尾添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); // 使用 addLast () 在尾部添加元素 sites. addLast(\\\"Wiki\\\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Wiki] 在列表开头移除元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeFirst(); System. out. println( sites); } } 以上实例，执行输出结果为： [Runoob, Taobao, Weibo] 在列表结尾移除元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); sites. removeLast(); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao] 获取列表开头的元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\\\"Google\\\"); sites. add(\\\"Runoob\\\"); sites. add(\\\"Taobao\\\"); sites. add(\\\"Weibo\\\"); System. out. println( sites. getFirst()); } } 以上实例，执行输出结果为：\",\"一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。\"],\"url\":\"https://www.runoob.com/java/java-linkedlist.html\"},{\"title\":\"C++程序 寻找链表长度|极客笔记\",\"snippets\":[\"C++程序 寻找链表长度|极客笔记 当前位置： 极客笔记 > C++ > C++ 示例 > C++程序 寻找链表长度 C++程序 寻找链表长度 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个 C ++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表定义示例，包含了节点的数据类型和链表的数据类型： struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } }; 计算链表长度 要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示： int getLengthRecursion(ListNode *node) { if (node == NULL) { return 0; } else { return 1 + getLengthRecursion(node->next); } } 函数中如果节点为空，则长度为0；否则不断递归到下一个节点，一直到最后一个节点，返回的是递归到该节点的长度+1。 使用示例 我们可以编写一个主函数，来验证计算链表长度的函数是否正确。 下面是一个使用示例，包含了链表的添加和输出功能，以及计算链表长度的功能： #include <iostream> using namespace std; struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } void addNode(int val) { if (head == NULL) { head = new ListNode(val); } else { ListNode *p = head; while (p->next != NULL) p = p->next; p->next = new ListNode(val); } } void printList() { ListNode *p = head; while (p != NULL) { cout << p->val << \\\" \\\"; p = p->next; } cout << endl; } }; int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } int main() { LinkedList list; list.addNode(1); list.addNode(2); list.addNode(3); list.addNode(4); list.addNode(5); list.printList(); cout << \\\"Length of the linked list: \\\" << getLength(&list) << endl; return 0; } 输出： 1 2 3 4 5 Length of the linked list: 5 结论 计算链表长度是一个简单而常用的操作，可以使用循环和递归两种方法来实现。 两种方法虽然代码不同，但本质相同，都是遍历整个链表，统计节点数量。 在实际应用中，要根据具体情况选择不同的方法。 上一篇 C++程序 查找两个链表交点 下一篇 C++程序 寻找给定和的子数组-第1集（非负数） Camera课程 API2 教程 Perf 教程 Native FW 教程 ISP 教程 Sensor 教程 Python教程 Python 教程 NumPy 教程 Django 教程 Java教程 Java 教程 Web教程 JavaScript 教程 jQuery 教程 CSS 教程 PHP 教程 Laravel 教程 TypeScript 教程 WordPress 教程 数据库教程 SQL 教程 SQLite 教程 MySQL 教程 PL/SQL 教程 MongoDB 教程 图形图像教程 OpenCV 教程 办公软件教程 Excel 教程 Linux教程 Linux命令全集 Linux内核API LVGL 教程 计算机教程 操作系统 教程 计算机网络 教程 C语言 教程 C++ 教程 Swift 教程 大数据教程 Hadoop 教程 Spark 教程 Scala 教程 开发工具教程 Git 教程 Jenkins 教程 ChatGPT 教程 IntelliJ 教程 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个C++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表\",\"下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。\",\"要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示：\"],\"url\":\"https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html\"}]}"
                   }
                 ]
               }
@@ -98,61 +156,45 @@
           "type": "None"
         },
         "contentOrigin": "DeepLeo",
-        "privacy": null,
+        "invocation": "search_web(\"如何判断链表的长度\")",
         "groundingInfo": {
-          "translation_results": [
+          "question_answering_results": [
             {
-              "index": "1",
-              "title": null,
-              "snippets": null,
-              "data": {
-                "SourceLanguage": "zh-Hans",
-                "TargetLanguage": "en",
-                "TranslatedText": "i want to travel",
-                "OriginalText": "我想去旅游",
-                "InputTransliteration": "",
-                "OutputTransliteration": "",
-                "Title": "Bing Translator",
-                "TranslationUrl": "http://www.bing.com/translator/?ref=TThis&text=我想去旅游&from=zh-Hans&to=en",
-                "alternateTranslations": []
-              },
+              "index": null,
+              "title": "C++程序 寻找链表长度|极客笔记",
+              "snippets": [
+                "要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。"
+              ],
+              "data": null,
               "context": null,
-              "url": "https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English",
+              "url": "https://bing.com/search?q=%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e9%93%be%e8%a1%a8%e7%9a%84%e9%95%bf%e5%ba%a6",
               "lastUpdatedDate": null
             }
           ],
           "web_search_results": [
             {
-              "index": "2",
-              "title": "Google Translate",
+              "index": null,
+              "title": "Java LinkedList | 菜鸟教程",
               "snippets": [
-                "Google's service, offered free of charge, instantly translates words, phrases, and web pages between English and over 100 other languages."
+                "Java LinkedList | 菜鸟教程 Java LinkedList Java 集合框架 链表（Linked list）是一种常见的基础数据结构，是一种线性表，但是并不会按线性的顺序存储数据，而是在每一个节点里存到下一个节点的地址。 链表可分为单向链表和双向链表。 一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。 LinkedList 实现了 Queue 接口，可作为队列使用。 LinkedList 实现了 List 接口，可进行列表的相关操作。 LinkedList 实现了 Deque 接口，可作为队列使用。 LinkedList 实现了 Cloneable 接口，可实现克隆。 LinkedList 实现了 java.io.Serializable 接口，即可支持序列化，能通过序列化去传输。 LinkedList 类位于 java.util 包中，使用前需要引入它，语法格式如下： // 引入 LinkedList 类 import java.util.LinkedList; LinkedList<E> list = new LinkedList<E> (); // 普通创建方法 或者 LinkedList<E> list = new LinkedList (Collection<? extends E> c); // 使用集合创建链表 创建一个简单的链表实例： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); sites. add(\"Weibo\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Weibo] 更多的情况下我们使用 ArrayList 访问列表中的随机元素更加高效，但以下几种情况 LinkedList 提供了更高效的方法。 在列表开头添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); // 使用 addFirst () 在头部添加元素 sites. addFirst(\"Wiki\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Wiki, Google, Runoob, Taobao] 在列表结尾添加元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); // 使用 addLast () 在尾部添加元素 sites. addLast(\"Wiki\"); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao, Wiki] 在列表开头移除元素： 实例 // 引入 LinkedList 类 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); sites. add(\"Weibo\"); sites. removeFirst(); System. out. println( sites); } } 以上实例，执行输出结果为： [Runoob, Taobao, Weibo] 在列表结尾移除元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); sites. add(\"Weibo\"); sites. removeLast(); System. out. println( sites); } } 以上实例，执行输出结果为： [Google, Runoob, Taobao] 获取列表开头的元素： 实例 import java.util.LinkedList; public class RunoobTest { public static void main (String[] args) { LinkedList < String > sites = new LinkedList < String >(); sites. add(\"Google\"); sites. add(\"Runoob\"); sites. add(\"Taobao\"); sites. add(\"Weibo\"); System. out. println( sites. getFirst()); } } 以上实例，执行输出结果为：",
+                "一个单向链表包含两个值: 当前节点的值和一个指向下一个节点的链接。 一个双向链表有三个整数值: 数值、向后的节点链接、向前的节点链接。 Java LinkedList（链表） 类似于 ArrayList，是一种常用的数据容器。 与 ArrayList 相比，LinkedList 的增加和删除的操作效率更高，而查找和修改的操作效率较低。 以下情况使用 ArrayList : 频繁访问列表中的某一个元素。 只需要在列表末尾进行添加和删除元素操作。 以下情况使用 LinkedList : 你需要通过循环迭代来访问列表中的某些元素。 需要频繁的在列表开头、中间、末尾等位置进行添加和删除元素操作。 LinkedList 继承了 AbstractSequentialList 类。"
               ],
               "data": null,
               "context": null,
-              "url": "https://translate.google.com.bd/?hl=en",
+              "url": "https://www.runoob.com/java/java-linkedlist.html",
               "lastUpdatedDate": null
             },
             {
-              "index": "3",
-              "title": "Google Translate",
+              "index": null,
+              "title": "C++程序 寻找链表长度|极客笔记",
               "snippets": [
-                "Translate. Detect language → English. Google home; Send feedback; Privacy and terms; Switch to full site"
+                "C++程序 寻找链表长度|极客笔记 当前位置： 极客笔记 > C++ > C++ 示例 > C++程序 寻找链表长度 C++程序 寻找链表长度 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个 C ++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表定义示例，包含了节点的数据类型和链表的数据类型： struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } }; 计算链表长度 要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示： int getLengthRecursion(ListNode *node) { if (node == NULL) { return 0; } else { return 1 + getLengthRecursion(node->next); } } 函数中如果节点为空，则长度为0；否则不断递归到下一个节点，一直到最后一个节点，返回的是递归到该节点的长度+1。 使用示例 我们可以编写一个主函数，来验证计算链表长度的函数是否正确。 下面是一个使用示例，包含了链表的添加和输出功能，以及计算链表长度的功能： #include <iostream> using namespace std; struct ListNode { int val; ListNode *next; ListNode(int x) : val(x), next(NULL) {} }; class LinkedList { public: ListNode *head; LinkedList() { head = NULL; } void addNode(int val) { if (head == NULL) { head = new ListNode(val); } else { ListNode *p = head; while (p->next != NULL) p = p->next; p->next = new ListNode(val); } } void printList() { ListNode *p = head; while (p != NULL) { cout << p->val << \" \"; p = p->next; } cout << endl; } }; int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } int main() { LinkedList list; list.addNode(1); list.addNode(2); list.addNode(3); list.addNode(4); list.addNode(5); list.printList(); cout << \"Length of the linked list: \" << getLength(&list) << endl; return 0; } 输出： 1 2 3 4 5 Length of the linked list: 5 结论 计算链表长度是一个简单而常用的操作，可以使用循环和递归两种方法来实现。 两种方法虽然代码不同，但本质相同，都是遍历整个链表，统计节点数量。 在实际应用中，要根据具体情况选择不同的方法。 上一篇 C++程序 查找两个链表交点 下一篇 C++程序 寻找给定和的子数组-第1集（非负数） Camera课程 API2 教程 Perf 教程 Native FW 教程 ISP 教程 Sensor 教程 Python教程 Python 教程 NumPy 教程 Django 教程 Java教程 Java 教程 Web教程 JavaScript 教程 jQuery 教程 CSS 教程 PHP 教程 Laravel 教程 TypeScript 教程 WordPress 教程 数据库教程 SQL 教程 SQLite 教程 MySQL 教程 PL/SQL 教程 MongoDB 教程 图形图像教程 OpenCV 教程 办公软件教程 Excel 教程 Linux教程 Linux命令全集 Linux内核API LVGL 教程 计算机教程 操作系统 教程 计算机网络 教程 C语言 教程 C++ 教程 Swift 教程 大数据教程 Hadoop 教程 Spark 教程 Scala 教程 开发工具教程 Git 教程 Jenkins 教程 ChatGPT 教程 IntelliJ 教程 C++程序 寻找链表长度 链表是一种常用的数据结构，它不像数组一样需要预先分配一定大小的内存，可以随时添加和删除数据。 但是，链表的一个缺点是不方便查找长度。 因此，本文将介绍如何编写一个C++程序来计算链表的长度。 链表的定义 链表是一组节点组成的集合，每个节点都包含两个部分，一个是数据部分，另一个是指向下一个节点的指针。 链表的头节点是第一个节点，也就是整个链表的起点。 下面是一个简单的链表",
+                "下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。",
+                "要计算链表的长度，我们只需要从头节点开始顺序遍历整个链表，直到遇到空节点为止。 为了方便起见，我们可以编写一个函数来计算链表长度。 下面是使用循环的方法来实现计算链表长度的函数： int getLength(LinkedList *list) { int len = 0; ListNode *p = list->head; while (p != NULL) { ++len; p = p->next; } return len; } 函数中使用一个计数器len来记录链表的长度，指针p用来指向当前节点。 循环中不断将p指向下一个节点，直到p指向空节点为止，此时链表长度为len。 我们也可以使用递归的方法来计算链表长度，如下所示："
               ],
               "data": null,
               "context": null,
-              "url": "https://translate.google.com/m",
-              "lastUpdatedDate": null
-            },
-            {
-              "index": "4",
-              "title": "\"I want to travel and relax a bit.\" - Duolingo",
-              "snippets": [
-                "Further to my previous reply, please also note that there is a special punctuation mark used in Chinese in a sentence like this. Duolingo has used a comma, but normally you would use a 、 which is called 頓號〔顿号〕dùnhào which Pleco defines as a “slight-pause mark used to set off items in a series.”"
-              ],
-              "data": null,
-              "context": null,
-              "url": "https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit",
+              "url": "https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html",
               "lastUpdatedDate": null
             }
           ]
@@ -162,10 +204,10 @@
         "text": "Generating answers for you...",
         "hiddenText": "Generating answers for you...",
         "author": "bot",
-        "createdAt": "2023-03-12T02:08:00.2807985+00:00",
-        "timestamp": "2023-03-12T02:08:00.2807985+00:00",
-        "messageId": "6b70f299-0df7-408b-9138-9f7b34eeba5b",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
+        "createdAt": "2023-11-18T04:05:23.8468865+00:00",
+        "timestamp": "2023-11-18T04:05:23.8468865+00:00",
+        "messageId": "cc216f3b-e380-426b-8a4f-4d0b94530b9f",
+        "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
         "messageType": "InternalLoaderMessage",
         "offense": "None",
         "adaptiveCards": [
@@ -192,16 +234,15 @@
           "updatedOn": null,
           "type": "None"
         },
-        "contentOrigin": "DeepLeo",
-        "privacy": null
+        "contentOrigin": "DeepLeo"
       },
       {
-        "text": "根据Bing翻译[^1^]，这句话的英文是：I want to travel.😊",
+        "text": "判断链表的长度是一个常见的数据结构和算法问题。有多种方法可以解决这个问题，我为你找到了一些相关的资料，你可以参考一下：\n\n- 一种方法是使用**循环**，即定义一个计数器和一个指针，从头节点开始遍历链表，每遍历一个节点，计数器加一，直到指针为空为止，此时计数器的值就是链表的长度[^3^] [^2^]。这种方法的时间复杂度是O (n)，空间复杂度是O (1)。\n- 另一种方法是使用**递归**，即定义一个递归函数，如果节点为空，返回0，否则返回1加上对下一个节点的递归调用，最终返回的值就是链表的长度[^3^]。这种方法的时间复杂度也是O (n)，但空间复杂度是O (n)，因为需要栈空间来存储递归调用。\n\n以上是我能找到的一些判断链表长度的方法，你可以根据自己的需要选择合适的方法。如果你还有其他问题，欢迎继续和我聊天。😊",
         "author": "bot",
-        "createdAt": "2023-03-12T02:08:00.2809296+00:00",
-        "timestamp": "2023-03-12T02:08:00.2809296+00:00",
-        "messageId": "222164bb-c205-4aa9-811a-c203df7d94e3",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
+        "createdAt": "2023-11-18T04:05:23.8469882+00:00",
+        "timestamp": "2023-11-18T04:05:23.8469882+00:00",
+        "messageId": "53ff8e54-7180-4196-bccc-7e4d44a84ec9",
+        "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
         "offense": "None",
         "adaptiveCards": [
           {
@@ -210,13 +251,13 @@
             "body": [
               {
                 "type": "TextBlock",
-                "text": "[1]: https://bing.com/search?q=translate+%E6%88%91%E6%83%B3%E5%8E%BB%E6%97%85%E6%B8%B8+to+English \"\"\n[2]: https://translate.google.com.bd/?hl=en \"Google Translate\"\n[3]: https://translate.google.com/m \"Google Translate\"\n[4]: https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit \"\\\"I want to travel and relax a bit.\\\" - Duolingo\"\n\n根据Bing翻译[^1^][1]，这句话的英文是：I want to travel.😊\n",
+                "text": "[1]: https://bing.com/search?q=%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E9%93%BE%E8%A1%A8%E7%9A%84%E9%95%BF%E5%BA%A6 \"\"\n[2]: https://www.runoob.com/java/java-linkedlist.html \"\"\n[3]: https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html \"\"\n\n判断链表的长度是一个常见的数据结构和算法问题。有多种方法可以解决这个问题，我为你找到了一些相关的资料，你可以参考一下：\n\n- 一种方法是使用**循环**，即定义一个计数器和一个指针，从头节点开始遍历链表，每遍历一个节点，计数器加一，直到指针为空为止，此时计数器的值就是链表的长度[^1^][3] [^2^][2]。这种方法的时间复杂度是O (n)，空间复杂度是O (1)。\n- 另一种方法是使用**递归**，即定义一个递归函数，如果节点为空，返回0，否则返回1加上对下一个节点的递归调用，最终返回的值就是链表的长度[^1^][3]。这种方法的时间复杂度也是O (n)，但空间复杂度是O (n)，因为需要栈空间来存储递归调用。\n\n以上是我能找到的一些判断链表长度的方法，你可以根据自己的需要选择合适的方法。如果你还有其他问题，欢迎继续和我聊天。😊",
                 "wrap": true
               },
               {
                 "type": "TextBlock",
                 "size": "small",
-                "text": "Learn more: [1. bing.com](https://bing.com/search?q=translate+%E6%88%91%E6%83%B3%E5%8E%BB%E6%97%85%E6%B8%B8+to+English) [2. translate.google.com.bd](https://translate.google.com.bd/?hl=en) [3. translate.google.com](https://translate.google.com/m) [4. forum.duolingo.com](https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit)",
+                "text": "Learn more: [1. deepinout.com](https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html) [2. www.runoob.com](https://www.runoob.com/java/java-linkedlist.html) [3. bing.com](https://bing.com/search?q=%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E9%93%BE%E8%A1%A8%E7%9A%84%E9%95%BF%E5%BA%A6)",
                 "wrap": true
               }
             ]
@@ -224,24 +265,31 @@
         ],
         "sourceAttributions": [
           {
-            "providerDisplayName": "",
-            "seeMoreUrl": "https://bing.com/search?q=translate+%e6%88%91%e6%83%b3%e5%8e%bb%e6%97%85%e6%b8%b8+to+English",
-            "searchQuery": "translate 我想去旅游 to English"
+            "providerDisplayName": "C++程序 寻找链表长度|极客笔记",
+            "seeMoreUrl": "https://deepinout.com/cpp/cpp-examples/g_cpp-program-for-finding-length-of-a-linked-list-iterative-and-recursive-approach.html",
+            "urlSignature": "qAlH6lfdP4W8Swbx0h0nZi63iGlXt8HShFnPhoyUmlw=",
+            "searchQuery": "如何判断链表的长度",
+            "provider": "search_web"
           },
           {
-            "providerDisplayName": "Google Translate",
-            "seeMoreUrl": "https://translate.google.com.bd/?hl=en",
-            "searchQuery": "translate 我想去旅游 to English"
+            "providerDisplayName": "Java LinkedList | 菜鸟教程",
+            "seeMoreUrl": "https://www.runoob.com/java/java-linkedlist.html",
+            "urlSignature": "jVNX0SPyMA5Rcb+I2Sw/KPkpY8UhkqB9Tt3mycTtw+U=",
+            "imageLink": "https://bing.com/th?id=OIP.LCbOxeg1Pk0boiBVDu7X0wHaFj&pid=cdx",
+            "imageWidth": "681",
+            "imageHeight": "511",
+            "imageFavicon": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAVOSURBVFhHrVdpTFxVFB63xPWHP/3XPxqNsbHRRFOjNrGNSxvmvRmWAqVsphtgw1bbAAOE2oq1DDNQQ9vI0qCy1JLSVsSyKdubgVboyjIzLMOOSyUaTax+nvPmzTBDZ5hBOMmXee8u5/vOuefde0cVqGUj+/6CHvEpo1mzuVASkw2S8GmhSail3yp6P2yQxAR9t3oTj+GxyrTV28neXQ8ZJfXrRFZiMAn9hSbxNyL812AS4Q7qv1soCXeo/xo964tM2pd5ruJm5cZR6LuDXiGyMiL+eSmhX0jiPM0r1ZvULyouA7ey1uiHKZpEwrRX5ysAZcRmkDRRAWcjvyPoCVJeQGn805vD/4kFykja8a7gRxQa78aRMzlN+HuJg1VDDohEZLe++aBC52mA6j4amOSM3GheWyhCFvSSuFOh9DRjj+Y155rru0QkngrB9pywFSEsOwyhOnrODpURRm0hhP2lIaBidoiQBKvBrN2g0DrMUXRitTPyvAYtNoZHYP17kVi/NTC8QGPVsduRodPipbgEPLNfhyAhGslBUXgrOgJHmzRumRBKPZaisFvcwumRBfSIOFSrxQYhnJwStgaG598Nx95ULc6f2YZX0w5g3ccnsCckFhViJDZHhONwo9YlgDI9x/uETF5TE/IAFUe5QxlnQEDehQjsTD+EqJRMRKUGjpj0TOw6lIGoNB12fJiDaGp7PzUL8VkH8UlLGAyLtcBFqZcFFHZrnqb0WxY71Kj8MQXW0QGMjdkI1oAxyhhV3umX39nHbdsVnOqNY1KXAFqGft62VUZJCCcBf7kL+LIvHROTVsxM2TE9Nb4sZqbtMrz1MbjPar+G073xngIk8Vc+O1S0U2W5GpcI8OXQSThDsNksGBwe8CmEg/AmgJ7vkogEFRVEZSAC2PnszAT6rvdjcEghpPb8ks9RUlmF24O3cP3mDczRGHchvgTIXJKYp6KHGo/GJQKYhIkHiJSJIlMy0NbVhblZbrtN75lo+qEd3zS3YAcVXUVtHYYtQ/IcfwL4KF9WAE+2jVhQfrYOEckZiD+Yi7qGRoyPj8gCzjdeRoLuKEbkwrOhqv4ioukLiEnPRnX9JbmNs+FTAHGrWIV7o7sAjuLi5WZsitwNcW8qOs1mzM9Nyk6nKDqd/gROf1XjSvv87CSa29vxTlwS3o5JREtHB/VN+l4Ck3CMakDM82z0XAK7fQTftX2PfbojCE48QIS1cgau9vfJy2G+ekUWarUNo6j8C2j2pSHlo+No6+zEhH3U9xJIwj/EnbzsZ+gsJCYYoaWoOn8Re7OOoMMkobz2HD7IzZdJOAOXmppJ5FGca/hWTr2/GqDiv8PXO5W+W3iOOkaXEyA7mh6XiTjSIcsgkoj8DNUGt3G/xToki3S+u+b5LEJlI3LcAcQ6fwJcDrmoSERp9deuz9HRzmRexvvKAN0x+Qrg2I5NokjL8MeigDSfApxwEvuDNwHE9ZPepHlDJmc71rflMWqsV5Sh7OoejE7cwuz05BpgCpbxPjoLYt0FlN1zM+IjmTLxCw8oNofi0k09Ooer0TFUtSqwj/ob+XTKBjtTb+fbtkK7aKyIBOTSIPk+6FC7NnBFTtc9oyTuVijvteLWkMdpYBF/ozxhjUGBCQVc9Aqdd/usfeuTpLTYMcGroxWDI2dyvvIrNMubkokcZ02sBnzRJST6jXyp8T8Z+a4oiRcIv3tz7gcLVO3VBrN646r+rJ7s3fYo7xPksI5qY4ycurbtpaA+2kuEIUIFb7N+/wmtxDiFxl7Ns8rZkcenKK1trQy61BhNQia1qematS7wf8Uq1X83tUJh8W4nfQAAAABJRU5ErkJggg==",
+            "searchQuery": "如何判断链表的长度",
+            "mediaUniqueId": "",
+            "sourceType": "CITATION",
+            "provider": "search_web"
           },
           {
-            "providerDisplayName": "Google Translate",
-            "seeMoreUrl": "https://translate.google.com/m",
-            "searchQuery": "translate 我想去旅游 to English"
-          },
-          {
-            "providerDisplayName": "\"I want to travel and relax a bit.\" - Duolingo",
-            "seeMoreUrl": "https://forum.duolingo.com/comment/25386100/I-want-to-travel-and-relax-a-bit",
-            "searchQuery": "translate 我想去旅游 to English"
+            "providerDisplayName": "C++程序 寻找链表长度|极客笔记",
+            "seeMoreUrl": "https://bing.com/search?q=%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e9%93%be%e8%a1%a8%e7%9a%84%e9%95%bf%e5%ba%a6",
+            "urlSignature": "hPQs1b/TLgfHUJpWQuxrsRmARGhlY8Suunk7Rx3xMyY=",
+            "searchQuery": "如何判断链表的长度",
+            "provider": "search_web"
           }
         ],
         "feedback": {
@@ -250,14 +298,27 @@
           "type": "None"
         },
         "contentOrigin": "DeepLeo",
-        "privacy": null,
+        "scores": [
+          {
+            "component": "BotOffense",
+            "score": 0.0006825019
+          },
+          {
+            "component": "BotOffense",
+            "score": 0.0006851713
+          },
+          {
+            "component": "BotOffense",
+            "score": 0.00056588
+          }
+        ],
         "suggestedResponses": [
           {
-            "text": "谢谢你。",
+            "text": "如何删除链表中的节点？",
             "author": "user",
-            "createdAt": "2023-03-12T02:08:04.2222136+00:00",
-            "timestamp": "2023-03-12T02:08:04.2222136+00:00",
-            "messageId": "dfd27bfd-e3a0-41b4-b7b5-fc267eb9978f",
+            "createdAt": "2023-11-18T04:05:45.9910225+00:00",
+            "timestamp": "2023-11-18T04:05:45.9910225+00:00",
+            "messageId": "bb517bed-7b2a-4fa1-bbf0-c640c0d12ed8",
             "messageType": "Suggestion",
             "offense": "Unknown",
             "feedback": {
@@ -265,15 +326,14 @@
               "updatedOn": null,
               "type": "None"
             },
-            "contentOrigin": "DeepLeo",
-            "privacy": null
+            "contentOrigin": "SuggestionChipsFalconService"
           },
           {
-            "text": "你会说中文吗？",
+            "text": "什么是递归函数？",
             "author": "user",
-            "createdAt": "2023-03-12T02:08:04.2222158+00:00",
-            "timestamp": "2023-03-12T02:08:04.2222158+00:00",
-            "messageId": "4eccdcb4-952b-403b-ba6a-9d073091345a",
+            "createdAt": "2023-11-18T04:05:45.9910235+00:00",
+            "timestamp": "2023-11-18T04:05:45.9910235+00:00",
+            "messageId": "42bed100-ab08-49ab-8b38-55206320376d",
             "messageType": "Suggestion",
             "offense": "Unknown",
             "feedback": {
@@ -281,15 +341,14 @@
               "updatedOn": null,
               "type": "None"
             },
-            "contentOrigin": "DeepLeo",
-            "privacy": null
+            "contentOrigin": "SuggestionChipsFalconService"
           },
           {
-            "text": "你能教我一些英语吗？",
+            "text": "有没有其他数据结构和算法问题可以学习?",
             "author": "user",
-            "createdAt": "2023-03-12T02:08:04.222218+00:00",
-            "timestamp": "2023-03-12T02:08:04.222218+00:00",
-            "messageId": "6dcee439-140f-4303-902b-39c7358bb7f3",
+            "createdAt": "2023-11-18T04:05:45.9910242+00:00",
+            "timestamp": "2023-11-18T04:05:45.9910242+00:00",
+            "messageId": "c2a4f399-7503-442d-b8a6-1727f4fa4d03",
             "messageType": "Suggestion",
             "offense": "Unknown",
             "feedback": {
@@ -297,66 +356,29 @@
               "updatedOn": null,
               "type": "None"
             },
-            "contentOrigin": "DeepLeo",
-            "privacy": null
+            "contentOrigin": "SuggestionChipsFalconService"
           }
-        ],
-        "spokenText": "根据Bing翻译，这句话的英文是：I want to travel."
-      },
-      {
-        "text": "translate 我想去旅游 to English",
-        "author": "bot",
-        "createdAt": "2023-03-12T02:08:04.243707+00:00",
-        "timestamp": "2023-03-12T02:08:04.243707+00:00",
-        "messageId": "3446dda5-27e7-4cee-b02d-fd71eab910b3",
-        "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
-        "messageType": "RenderCardRequest",
-        "offense": "None",
-        "adaptiveCards": [
-          {
-            "type": "AdaptiveCard",
-            "version": "1.0",
-            "body": [
-              {
-                "type": "RichTextBlock",
-                "inlines": [
-                  {
-                    "type": "TextRun",
-                    "isSubtle": true,
-                    "italic": true,
-                    "text": "translate 我想去旅游 to English"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "feedback": {
-          "tag": null,
-          "updatedOn": null,
-          "type": "None"
-        },
-        "contentOrigin": "DeepLeo",
-        "privacy": null
+        ]
       }
     ],
     "firstNewMessageIndex": 1,
-    "conversationId": "51D|BingProd|0E390989B3F0C35050E1A9DEED56562ED15C1F9AB41BF1733B72780D0DFE8FF5",
-    "requestId": "72a19064-e445-491d-97d1-bd03122e5537",
-    "conversationExpiryTime": "2023-03-12T08:08:04.3133244Z",
-    "shouldInitiateConversation": true,
+    "defaultChatName": null,
+    "conversationId": "51D|BingProd|25ADAFC76374850A62CF2C285A7B253E0BF90C4E722A8A813075F258A649EF3F",
+    "requestId": "77b13b73-8138-11f6-ff28-b0375509df59",
+    "conversationExpiryTime": "2024-02-16T04:05:46.0295914Z",
     "telemetry": {
-      "metrics": null,
-      "startTime": "2023-03-12T02:07:52.0990342Z"
+      "startTime": "2023-11-18T04:05:13.1173554Z"
     },
     "throttling": {
-      "maxNumUserMessagesInConversation": 10,
-      "numUserMessagesInConversation": 1
+      "maxNumUserMessagesInConversation": 30,
+      "numUserMessagesInConversation": 3,
+      "maxNumLongDocSummaryUserMessagesInConversation": 50,
+      "numLongDocSummaryUserMessagesInConversation": 0
     },
     "result": {
       "value": "Success",
-      "message": "translate 我想去旅游 to English",
-      "serviceVersion": "20230311.11"
+      "message": "判断链表的长度是一个常见的数据结构和算法问题。有多种方法可以解决这个问题，我为你找到了一些相关的资料，你可以参考一下：\n\n- 一种方法是使用**循环**，即定义一个计数器和一个指针，从头节点开始遍历链表，每遍历一个节点，计数器加一，直到指针为空为止，此时计数器的值就是链表的长度[^3^] [^2^]。这种方法的时间复杂度是O (n)，空间复杂度是O (1)。\n- 另一种方法是使用**递归**，即定义一个递归函数，如果节点为空，返回0，否则返回1加上对下一个节点的递归调用，最终返回的值就是链表的长度[^3^]。这种方法的时间复杂度也是O (n)，但空间复杂度是O (n)，因为需要栈空间来存储递归调用。\n\n以上是我能找到的一些判断链表长度的方法，你可以根据自己的需要选择合适的方法。如果你还有其他问题，欢迎继续和我聊天。😊",
+      "serviceVersion": "20231117.80"
     }
   }
 }

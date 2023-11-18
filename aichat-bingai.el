@@ -816,13 +816,6 @@ all types in `aichat-bingai--allowed-message-types'."
   "message[arguments][0][messages][0][text]."
   (aichat-json-access message "{arguments}[0]{messages}[0]{text}"))
 
-(defun aichat-bingai-message-type-1-search-result (message)
-  "message[arguments][0][messages][0][hiddenText]."
-  (when-let* ((hidden-text (aichat-json-access message "{arguments}[0]{messages}[0]{hiddenText}"))
-              (hidden-object (ignore-errors  (aichat-json-parse (string-trim hidden-text "```json" "```")))))
-    (cl-loop for result in hidden-object
-             vconcat (cdr result))))
-
 (defun aichat-bingai-message-type-1-message-type (message)
   "msg[arguments][0][messages][0][messageType]."
   (aichat-json-access message "{arguments}[0]{messages}[0]{messageType}"))
@@ -841,19 +834,6 @@ all types in `aichat-bingai--allowed-message-types'."
                       (author (aichat-json-access msg "{author}")))
                   (when (and (not msg-type) (string= author "bot"))
                     (cl-return (aichat-json-access msg "{text}")))))))
-
-(defun aichat-bingai-message-type-2-search-result (message)
-  "message[arguments][0][messages][?][hiddenText]."
-  (when-let ((messages  (aichat-json-access message "{item}{messages}")))
-    (cl-loop for msg across messages
-             do (let ((msg-type (aichat-json-access msg "{messageType}"))
-                      (author (aichat-json-access msg "{author}")))
-                  (when (and (string= msg-type "InternalSearchResult") (string= author "bot"))
-                    (when-let* ((hidden-text (aichat-json-access msg "{hiddenText}"))
-                                (hidden-object (ignore-errors (aichat-json-parse (string-trim hidden-text "```json" "```")))))
-                      (cl-return
-                       (cl-loop for result in hidden-object
-                                vconcat (cdr result)))))))))
 
 (defun aichat-bingai-message-type-2-suggestion (message)
   "message[item][messages][?][text]."
@@ -879,6 +859,14 @@ all types in `aichat-bingai--allowed-message-types'."
                       (if (string= "IMAGE" type)
                           (cl-return text)
                         (cl-return nil))))))))
+
+(defun aichat-bingai-message-type-2-source-attrs (message)
+  "message[item][messages][?][sourceAttributions]."
+  (when-let ((messages  (aichat-json-access message "{item}{messages}")))
+    (cl-loop for msg across messages
+             do (let ((source-attrs (aichat-json-access msg "{sourceAttributions}")))
+                  (when source-attrs
+                    (cl-return source-attrs))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chat ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1000,25 +988,28 @@ NEW-P is t, which means it is a new conversation."
       (save-mark-and-excursion
         (aichat-bingai--chat-convert-to-org))))
 
-  ;; insert search result
-  (when-let ((search-results (aichat-bingai-message-type-2-search-result msg)))
+  ;; insert source-attrs
+  (when-let ((source-attrs (aichat-bingai-message-type-2-source-attrs msg)))
     (with-current-buffer (aichat-bingai--chat-buffer chat)
       (save-mark-and-excursion
         (goto-char (aichat-bingai--chat-reply-point chat))
         (end-of-line)
         (insert "\n")
-        (mapc (lambda (result)
-                (aichat-debug "Insert search result: %s"  result)
-                (let ((index (aichat-json-access result "{index}"))
-                      (title (or (aichat-json-access result "{title}")
-                                 (chat-json-access result "{data}{Title}")))
-                      (url (aichat-json-access result "{url}")))
+        (let ((index 1)
+              (title)
+              (url))
+          (mapc (lambda (source-attr)
+                  (aichat-debug "Insert source attrs: %s"  source-attr)
+                  (setq url (aichat-json-access source-attr "{seeMoreUrl}"))
+                  (setq title (or (aichat-json-access source-attr "{providerDisplayName}")
+                                  url))
                   (insert (format "%s. " index))
                   (if (derived-mode-p 'org-mode)
                       (org-insert-link nil url (or title url))
                     (insert (format "[%s](%s)" (or title url) url)))
-                  (insert "\n")))
-              search-results)
+                  (insert "\n")
+                  (cl-incf index))
+                source-attrs))
         (insert "\n"))))
 
   ;; generage image
