@@ -300,8 +300,7 @@ to the websocket protocol.
   "The url of create conversation.")
 
 (defconst aichat-bingai--conversation-headers
-  `(("authority" . "edgeservices.bing.com")
-    ("accept" . "application/json")
+  `(("accept" . "application/json")
     ("accept-language" . "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
     ("content-type" . "application/json")
     ("referer" . "https://www.bing.com/search?q=Bing+AI&showconv=1")
@@ -312,8 +311,7 @@ to the websocket protocol.
     ("sec-fetch-mode" . "cors")
     ("sec-fetch-site" . "same-origin")
     ("x-ms-client-request-id" . ,(aichat-uuid))
-    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.10.0 OS/Win32")
-    ("x-forwarded-for" . "1.1.1.1"))
+    ("x-ms-useragent" . "azsdk-js-api-client-factory/1.0.0-beta.1 core-rest-pipeline/1.12.0 OS/Windows"))
   "The headers of create conversation.")
 
 (defconst aichat-bingai--chathub-headers
